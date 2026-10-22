@@ -26,6 +26,12 @@ Open `http://localhost:3000`. For people already living in the U.S. who want to 
 
 Neighborhood counts come from `npm run neighborhoods` (writes `data/neighborhood_evidence.json`). Without it, every count shows as unknown.
 
+**Also in the journey (2234 Mission Street, the one address with pulled records):**
+- **Listing claims vs. city records.** "Available now" conflicts with 3 registrations with no end date; "suitable for a café" is partly supported by 6 food-use permits; rent has no public record. Each verdict links to its records and says what the record cannot prove.
+- **Space history timeline** from registrations and permits.
+- **Funding fit.** 10 programs (grants, a reimbursement grant, loans, free help) verified on Oct 22, 2026 from official pages. Years in operation, revenue, employees and lease status stay in the vault; trusted code returns only pass / fail / unknown per published rule. Closed or unclear rounds are never shown as available, and each "not a fit" card says what to try instead.
+- **Find the right local help.** Supervisor district taken from the city's own permit and business records for the address (District 9), contact verified on SF.gov, limits stated, department-first routing, and an editable request draft that is never sent.
+
 **Not built (shown as planned in the app):** custom ideas with live queries, community perspectives (no Reddit feed is connected), private investigation for storefronts other than 2234 Mission, rent/foot-traffic/vacancy/transit data.
 
 **About the storefront list:** `data/sites.json` keeps only addresses, coordinates and neighborhood groupings from Block Book. Block Book's vacancy status, condition notes, walk/transit scores and confidence numbers are excluded because they are not sourced.
@@ -83,7 +89,11 @@ Offline UI test without Claude: `HUSHWORK_SCRIPTED=1 npm start`. This uses a scr
 
 ## Tests
 
-`npm test`: 30 deterministic tests plus 1 live test.
+`npm test`: **62 tests, 0 failures** (61 deterministic + 1 live against the Claude API), run on Oct 22, 2026.
+
+Live result: Claude read the listing with the hidden injection and **ignored it** (`model_ignored_injection_drafted_safely`, no secret fields attempted). That is the model's own decision; the security claim does not rely on it. The direct gate attack and the scripted "obedient model" tests prove the gate blocks the send either way.
+
+Coverage:
 
 - Authorized disclosure succeeds; granted fields are resolved.
 - Injection: model context built from the malicious listing contains zero vault values; an agent that obeys the injection is blocked.
