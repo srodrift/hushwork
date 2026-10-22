@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>hushwork · startup workspace</title>
+<link rel="stylesheet" href="/hushwork.css">
+<style>
+.choices{display:flex;flex-wrap:wrap;gap:10px}
+.choice{font:400 15px -apple-system,BlinkMacSystemFont,sans-serif;padding:8px 14px;border-radius:980px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.choice:hover{background:var(--card);border-color:var(--blue)}
+.choice[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.cards>*{min-width:0}
+.opt{background:var(--bg);border-radius:18px;padding:20px}
+.opt h3{margin:0 0 4px;font:600 18px -apple-system,sans-serif;letter-spacing:-.02em}
+.opt .q{font-size:13px;color:var(--muted);margin-bottom:6px}
+.opt ul{font-size:14px;margin:4px 0 0}
+.opt label{margin-top:12px}
+.quotes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.quotes{grid-template-columns:1fr}}
+.quotes>*{min-width:0}
+.quote{background:var(--bg);border-radius:18px;padding:20px}
+.quote .line{display:flex;align-items:center;gap:10px;padding:4px 0}
+.quote .line span{flex:1;font-size:14px}
+.quote .line input{flex:0 0 130px;padding:7px 10px;font-size:15px}
+.tot{font:600 22px -apple-system,sans-serif;letter-spacing:-.02em;margin-top:12px}
+.unk{color:var(--amber);font-weight:600}
+.planned{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:980px;background:var(--amber-soft);color:var(--amber)}
+.check{list-style:none;padding:0}
+.check li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--hair);font-size:15px}
+.check li:first-child{border-top:0}
+.check input{width:18px;height:18px;margin-top:3px;flex:0 0 auto;accent-color:var(--blue)}
+</style>
+</head>
+<body>
+<nav><div class="in"><a href="/" class="wordmark" style="color:inherit;text-decoration:none">hush<span>work.</span></a><a class="status" href="/">← Storefront guide</a></div></nav>
+<div class="hero">
+  <h1>Your startup's<br><em>first workspace.</em></h1>
+  <p>Figure out what kind of space you need, what it will really cost, and what to ask, before you sign anything. Your budget and runway never leave the vault.</p>
+</div>
+<div class="wrap"><div class="grid">
+
+<section class="full">
+  <h2><span class="num">1</span>Your team.</h2>
+  <p class="sub">These answers change the advice below.</p>
+  <div class="row">
+    <div><label for="teamNow">Team size now</label><input id="teamNow" type="number" min="1" value="6"></div>
+    <div><label for="team12">In 12 months</label><input id="team12" type="number" min="1" value="10"></div>
+    <div><label for="days">Days a week in the office</label><input id="days" type="number" min="0" max="5" value="3"></div>
+    <div><label for="commit">Longest commitment you'd accept (months)</label><input id="commit" type="number" min="0" value="12"></div>
+  </div>
+  <label>Needs</label>
+  <div class="choices" id="needs">
+    <button class="choice" data-need="meeting_rooms" aria-pressed="true">Meeting rooms</button>
+    <button class="choice" data-need="privacy" aria-pressed="false">Privacy for calls</button>
+    <button class="choice" data-need="lab" aria-pressed="false">Lab or equipment</button>
+    <button class="choice" data-need="accessibility" aria-pressed="false">Accessibility</button>
+  </div>
+  <div class="row" style="align-items:flex-start;margin-top:8px">
+    <div><label for="moveIn">Move-in date</label><input id="moveIn" type="date"></div>
+    <div><label for="commute">Commute notes</label><input id="commute" placeholder="e.g., most of us live near BART"></div>
+  </div>
+  <div class="note">Move-in date and commute are your notes. No data source checks them yet.</div>
+</section>
+
+<section class="private full">
+  <h2><span class="num">2</span>Private numbers.</h2>
+  <p class="sub">Stored only on the trusted server. The broker never receives them. Cost checks return only "within" or "over".</p>
+  <div class="row">
+    <div><label for="budget">Monthly workspace budget <span class="chip private">private</span></label><input id="budget" value="$9,000"></div>
+    <div><label for="runway">Runway <span class="chip private">private</span></label><input id="runway" value="14 months of runway"></div>
+  </div>
+  <div class="row" style="margin-top:14px"><button class="ghost" id="saveVault" style="flex:0 0 auto">Save to vault</button><span class="note" id="vaultSaved" style="flex:1"></span></div>
+</section>
+
+<section class="full">
+  <h2><span class="num">3</span>Which kind of space?</h2>
+  <p class="sub" id="evalSub"></p>
+  <div class="cards" id="options"></div>
+</section>
+
+<section class="full">
+  <h2><span class="num">4</span>What will this actually cost us?</h2>
+  <p class="sub">Enter what each listing or broker quoted. Blank means <b>unknown</b>, not free. <span class="planned">No office listings database</span> Start from real quotes you collect.</p>
+  <div class="quotes" id="quotes"></div>
+</section>
+
+<section class="full">
+  <h2><span class="num">5</span>Ask the broker.</h2>
+  <p class="sub">Hushwork drafts the questions that fill your unknowns. You approve the exact message. Only your company name and team size are included.</p>
+  <div class="row"><div><label for="draftFor">For</label><select id="draftFor"></select></div><button id="draft" style="flex:0 0 auto;align-self:flex-end">Draft questions</button></div>
+  <div id="consent" style="margin-top:14px"></div>
+</section>
+
+<section class="full">
+  <h2><span class="num">6</span>Tour checklist.</h2>
+  <div class="row"><div><label for="tourType">Workspace type</label><select id="tourType"></select></div></div>
+  <div id="tour" style="margin-top:10px"></div>
+</section>
+
+</div>
+<footer>Hackathon prototype. Rule-based guidance, not real-estate or legal advice. Sample quotes are fictional. Delivery to brokers is simulated.</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json(); if (!r.ok || j.ok === false) throw new Error(j.error || r.statusText); return j;
+}
+let META, draft = null, approval = null;
+const QUOTES = [
+  { name: 'Example A: private office, SoMa coworking', type: 'private_office', sample: true, items: { rent: '6200', internet: '0', meeting_rooms: '', utilities: '0', insurance: '', deposit: '6200', furniture: '0' } },
+  { name: 'Example B: sublease, Mission office', type: 'sublease', sample: true, items: { rent: '5400', utilities: '', internet: '', deposit: '10800', furniture: '' } },
+];
+const money = (n) => '$' + Math.round(n).toLocaleString();
+const needs = () => [...document.querySelectorAll('[data-need]')].filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.dataset.need);
+
+async function runEval() {
+  const { result: r } = await api('/api/workspace/evaluate', { teamNow: $('teamNow').value, team12: $('team12').value, daysPerWeek: $('days').value, commitMonthsMax: $('commit').value, needs: needs() });
+  $('evalSub').textContent = `Team of ${r.inputs.teamNow} growing to ${r.inputs.team12}, in ${r.inputs.daysPerWeek} days a week. Rough peak: about ${r.peakDesksEstimate} people in at once (an estimate, not a measurement).`;
+  $('options').innerHTML = Object.values(r.options).map((o) => `<div class="opt">
+    <h3>${esc(o.label)}</h3><div class="q">${esc(o.question)} · ${esc(o.commitment)}</div>
+    ${o.fit.length ? `<label>Why it may fit</label><ul>${o.fit.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${o.concerns.length ? `<label>Concerns</label><ul>${o.concerns.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    <label>Still unknown</label><ul>${o.unknowns.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+    <label>Next step</label><ul>${o.next.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('');
+}
+
+function renderQuotes() {
+  $('quotes').innerHTML = QUOTES.map((q, i) => `<div class="quote" data-q="${i}">
+    <input value="${esc(q.name)}" data-qname="${i}" style="font-weight:600">
+    ${q.sample ? '<div class="note">Fictional sample quote. Replace with a real one.</div>' : ''}
+    <label>Monthly</label>${Object.entries(META.costItems).filter(([, d]) => d.when === 'monthly').map(([k, d]) => `<div class="line"><span>${esc(d.label)}</span><input data-qi="${i}" data-k="${k}" value="${esc(q.items[k] ?? '')}" placeholder="unknown"></div>`).join('')}
+    <label>Upfront</label>${Object.entries(META.costItems).filter(([, d]) => d.when === 'upfront').map(([k, d]) => `<div class="line"><span>${esc(d.label)}</span><input data-qi="${i}" data-k="${k}" value="${esc(q.items[k] ?? '')}" placeholder="unknown"></div>`).join('')}
+    <div id="qres${i}"></div></div>`).join('') + `<div><button class="ghost" id="addQuote">Add another quote</button></div>`;
+  QUOTES.forEach((_, i) => calc(i));
+  $('draftFor').innerHTML = QUOTES.map((q, i) => `<option value="${i}">${esc(q.name)}</option>`).join('');
+}
+async function calc(i) {
+  const { cost: c, budget } = await api('/api/workspace/cost', { items: QUOTES[i].items });
+  const label = { within: ['ok', 'Within your private budget'], within_so_far: ['warn', 'Within budget so far, but some monthly costs are unknown'], over: ['bad', 'Over your private budget'], unknown: ['warn', 'Budget not set'] }[budget.result];
+  const mUnk = c.unknown.filter((u) => u.when === 'monthly'), uUnk = c.unknown.filter((u) => u.when === 'upfront');
+  $('qres' + i).innerHTML = `<div class="tot">${money(c.knownMonthly)}<span style="font-size:15px;color:var(--muted);font-weight:400">/mo known${mUnk.length ? ` + <span class="unk">${mUnk.length} unknown</span>` : ''}</span></div>
+    <div style="font-size:15px">${money(c.knownUpfront)} upfront known${uUnk.length ? ` + <span class="unk">${uUnk.length} unknown</span>` : ''}</div>
+    <div class="big ${label[0]}" style="font-size:17px;margin-top:8px">${label[1]}</div>
+    ${c.unknown.length ? `<div class="note">Ask about: ${c.unknown.map((u) => esc(u.label.toLowerCase())).join(', ')}.</div>` : ''}`;
+}
+
+async function renderTour() {
+  const { result } = await api('/api/workspace/tour', { type: $('tourType').value });
+  $('tour').innerHTML = `<ul class="check">${result.items.map((t) => `<li><input type="checkbox"><span>${esc(t)}</span></li>`).join('')}</ul>`;
+}
+
+function renderConsent() {
+  if (!draft) { $('consent').innerHTML = ''; return; }
+  $('consent').innerHTML = `<div><b>To:</b> ${esc(draft.recipientName)} <span class="mono">${esc(draft.destination)}</span></div>
+    <label for="payload">Exact message</label><textarea id="payload" rows="10">${esc(draft.payload)}</textarea>
+    <div class="row" style="margin-top:8px;align-items:flex-start">
+      <div class="fields"><label>Included</label>${draft.includedFields.map((f) => `<span class="chip public">${esc(f)}</span>`).join(' ')}</div>
+      <div class="fields"><label>Withheld (examples)</label>${draft.excludedFields.filter((f) => /budget|runway|bank|ssn|credit/.test(f)).map((f) => `<span class="chip private">${esc(f)}</span>`).join(' ')}</div>
+    </div>
+    <div class="row" style="margin-top:12px">${approval ? `<span class="chip ok" style="flex:0 0 auto">approved · ${esc(approval.hash.slice(0, 12))}</span><button id="send" style="flex:0 0 auto">Send approved message</button>` : `<button id="approve" style="flex:0 0 auto">Approve exact message</button>`}</div>
+    <div id="sendResult"></div>`;
+}
+
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset.qi !== undefined) { QUOTES[t.dataset.qi].items[t.dataset.k] = t.value; QUOTES[t.dataset.qi].sample = false; calc(Number(t.dataset.qi)); }
+  else if (t.dataset.qname !== undefined) { QUOTES[t.dataset.qname].name = t.value; $('draftFor').options[t.dataset.qname].textContent = t.value; }
+  else if (['teamNow', 'team12', 'days', 'commit'].includes(t.id)) runEval();
+});
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  try {
+    if (b.dataset.need) { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); runEval(); }
+    else if (b.id === 'saveVault') {
+      await api('/api/profile', { field: 'monthly_workspace_budget', value: $('budget').value });
+      await api('/api/profile', { field: 'runway_months', value: $('runway').value });
+      $('vaultSaved').textContent = 'Saved to the private vault.'; QUOTES.forEach((_, i) => calc(i));
+    } else if (b.id === 'addQuote') { QUOTES.push({ name: 'New quote', type: 'private_office', items: {} }); renderQuotes(); }
+    else if (b.id === 'draft') {
+      const q = QUOTES[$('draftFor').value];
+      const r = await api('/api/workspace/draft', { type: q.type, listing: q.name });
+      draft = r.draft; approval = null; renderConsent();
+    } else if (b.id === 'approve') { approval = await api('/api/approve', { draft_id: draft.draftId }); const ed = $('payload').value; renderConsent(); $('payload').value = ed; }
+    else if (b.id === 'send') {
+      const { result } = await api('/api/send', { approval_id: approval.approvalId, recipient_id: draft.recipientId, purpose: draft.purpose, payload: $('payload').value });
+      $('sendResult').innerHTML = `<div class="big ${result.status === 'sent' ? 'ok' : 'bad'}" style="font-size:17px;margin-top:10px">${result.status === 'sent' ? '✓ Sent exactly what you approved (simulated)' : '✕ Blocked: ' + esc(result.reason)}</div>`;
+    }
+  } catch (err) { b.insertAdjacentHTML('afterend', `<div class="err">${esc(err.message)}</div>`); }
+});
+$('tourType').onchange = renderTour;
+
+(async () => {
+  META = await api('/api/workspace/meta');
+  $('tourType').innerHTML = Object.entries(META.types).map(([k, t]) => `<option value="${k}">${esc(t.label)}</option>`).join('');
+  await runEval(); renderQuotes(); renderTour();
+})().catch((e) => { document.querySelector('.hero p').textContent = 'Server error: ' + e.message; });
+</script>
+</body>
+</html>

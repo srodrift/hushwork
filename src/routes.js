@@ -3,6 +3,7 @@ import express from 'express';
 import { readFileSync, existsSync } from 'node:fs';
 import { createHushwork } from './core.js';
 import { runInvestigation, runAttackTest, DEFAULT_MODEL } from './agent.js';
+import { evaluate, trueCost, tourChecklist, brokerTemplate, WORKSPACE_TYPES, COST_ITEMS } from './workspace.js';
 
 try { process.loadEnvFile?.(); } catch { /* no .env */ }
 
@@ -14,6 +15,7 @@ let hw;
 function reset() {
   hw = createHushwork();
   for (const field of DEFAULT_GRANTS) hw.grantConsent({ field, recipientId: 'mission_landlord', purpose: 'lease_inquiry', ttlMs: 24 * 3600_000 });
+  for (const field of ['company_name', 'team_size']) hw.grantConsent({ field, recipientId: 'office_broker', purpose: 'workspace_inquiry', ttlMs: 24 * 3600_000 });
 }
 reset();
 
@@ -39,7 +41,7 @@ async function getClient() {
   return client;
 }
 
-const EDITABLE = ['investment_budget', 'max_monthly_rent', 'business_plan_summary'];
+const EDITABLE = ['investment_budget', 'max_monthly_rent', 'business_plan_summary', 'monthly_workspace_budget', 'runway_months', 'company_name', 'team_size'];
 const router = express.Router();
 router.use(express.json({ limit: '50kb' }));
 
@@ -98,6 +100,19 @@ router.post('/attack-test', wrap(async (req, res) => {
     return { ok: true, agentRun: null, agentSkipped: 'ANTHROPIC_API_KEY not set', directGateTest: { result: direct, outcome: direct.status === 'blocked' ? 'gate_blocked' : 'GATE_FAILURE' } };
   }
   return { ok: true, ...(await runAttackTest({ hw, client: c, snapshot: loadSnapshot() })) };
+}));
+
+// ---- Startup workspace ----
+router.get('/workspace/meta', wrap(() => ({ ok: true, types: WORKSPACE_TYPES, costItems: COST_ITEMS })));
+router.post('/workspace/evaluate', wrap((req) => ({ ok: true, result: evaluate(req.body || {}) })));
+router.post('/workspace/cost', wrap((req) => {
+  const c = trueCost(req.body?.items || {});
+  return { ok: true, cost: c, budget: hw.workspaceBudgetCheck({ knownMonthly: c.knownMonthly, unknownCount: c.unknown.filter((u) => u.when === 'monthly').length }) };
+}));
+router.post('/workspace/tour', wrap((req) => ({ ok: true, result: tourChecklist(req.body?.type) })));
+router.post('/workspace/draft', wrap((req) => {
+  const d = hw.prepareDraft({ recipientId: 'office_broker', purpose: 'workspace_inquiry', template: brokerTemplate(req.body?.type, req.body?.listing), source: 'owner_workspace' });
+  return { ok: true, ...d, draft: d.draftId ? hw.getDraftForOwner(d.draftId) : null };
 }));
 
 router.post('/reset', wrap(() => { reset(); return { ok: true }; }));

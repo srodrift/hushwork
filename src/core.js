@@ -22,6 +22,11 @@ export const DEMO_PROFILE = Object.freeze({
   max_monthly_rent: '$7,500',
   business_plan_summary: 'Neighborhood bakery + coffee counter, 6 staff, opening Q2 2027.',
   personal_guarantee_willing: 'yes',
+  // Startup workspace use case (synthetic)
+  company_name: 'Fogline Labs',
+  team_size: '6 people, growing to about 10 within a year',
+  monthly_workspace_budget: '$9,000',
+  runway_months: '14 months of runway',
 });
 
 // Recipients are defined server-side. The agent can only name a recipient id;
@@ -29,9 +34,10 @@ export const DEMO_PROFILE = Object.freeze({
 export const DEMO_RECIPIENTS = Object.freeze({
   mission_landlord: { id: 'mission_landlord', name: 'Mission St Landlord', endpoint: 'sim://outbox/mission_landlord' },
   valencia_broker: { id: 'valencia_broker', name: 'Valencia Broker', endpoint: 'sim://outbox/valencia_broker' },
+  office_broker: { id: 'office_broker', name: 'Office Broker (simulated)', endpoint: 'sim://outbox/office_broker' },
 });
 
-export const PURPOSES = Object.freeze(['lease_inquiry']);
+export const PURPOSES = Object.freeze(['lease_inquiry', 'workspace_inquiry']);
 
 // Canonical form for hashing: Unicode NFC + normalized line endings. Nothing else
 // is normalized, so any visible edit (even one character) changes the hash.
@@ -232,6 +238,19 @@ export function createHushwork({
     return { result, basis: 'asking rent from unverified broker listing' };
   }
 
+  // ---- Owner-only: coarse check of a known monthly cost against the private
+  // workspace budget. Not exposed as an agent tool. Never returns the budget.
+  function workspaceBudgetCheck({ knownMonthly, unknownCount }) {
+    const max = Number(String(vault.get('monthly_workspace_budget') || '').replace(/[^0-9.]/g, ''));
+    const known = Number(knownMonthly);
+    let result;
+    if (!max || !Number.isFinite(known)) result = 'unknown';
+    else if (known > max) result = 'over';
+    else result = unknownCount > 0 ? 'within_so_far' : 'within';
+    log({ type: 'derived', field: 'monthly_workspace_budget', source: 'owner', result });
+    return { result };
+  }
+
   // ---- What the agent is allowed to see ----
   function buildAgentContext(publicData = {}) {
     return {
@@ -248,6 +267,7 @@ export function createHushwork({
     grantConsent, revoke, approve, deny, setProfileField, getDraftForOwner, sendApproved,
     // agent tools
     prepareDraft, budgetCheck,
+    workspaceBudgetCheck,
     // gate (direct) and context
     disclose, buildAgentContext,
     // read-only views

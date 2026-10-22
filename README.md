@@ -30,6 +30,10 @@ Neighborhood counts come from `npm run neighborhoods` (writes `data/neighborhood
 
 **About the storefront list:** `data/sites.json` keeps only addresses, coordinates and neighborhood groupings from Block Book. Block Book's vacancy status, condition notes, walk/transit scores and confidence numbers are excluded because they are not sourced.
 
+## Second use case: a startup's first workspace
+
+`/workspace.html`. Team size, growth, days in office, needs, and longest commitment change the advice across five workspace types (coworking desk, private coworking office, sublease, direct lease, incubator). "What will this actually cost us?" totals quoted line items; blank items are unknown, never zero. A private monthly budget and runway stay in the vault; the cost check returns only within / within so far / over. Broker questions go through the same exact-message approval and release only company name and team size. There is no office listings database; the page starts from quotes the founder enters (two fictional samples are labeled).
+
 ## Run it
 
 ```bash
