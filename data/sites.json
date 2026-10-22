@@ -1,0 +1,556 @@
+{
+ "source": "Storefront addresses and coordinates from Block Book (srodrift/block, prior project). Only geography is reused. Block Book status, vacancy, condition, scores and notes are NOT included because they are not sourced.",
+ "count": 55,
+ "sites": [
+  {
+   "id": "901-market",
+   "name": "901 Market Street",
+   "corridor": "downtown",
+   "area": "Market Street / Mid-Market",
+   "lat": 37.7837,
+   "lng": -122.4089,
+   "block": "3705",
+   "lot": "017"
+  },
+  {
+   "id": "865-market",
+   "name": "865 Market Street",
+   "corridor": "downtown",
+   "area": "Yerba Buena / SF Centre",
+   "lat": 37.7844,
+   "lng": -122.4069,
+   "block": "3705",
+   "lot": "049"
+  },
+  {
+   "id": "1-market",
+   "name": "1 Market Street",
+   "corridor": "downtown",
+   "area": "Embarcadero",
+   "lat": 37.7937,
+   "lng": -122.3945,
+   "block": "3713",
+   "lot": "006"
+  },
+  {
+   "id": "101-spear",
+   "name": "101 Spear Street",
+   "corridor": "downtown",
+   "area": "East Cut / Rincon",
+   "lat": 37.793,
+   "lng": -122.3936,
+   "block": "3741",
+   "lot": "031"
+  },
+  {
+   "id": "550-howard",
+   "name": "550 Howard Street",
+   "corridor": "downtown",
+   "area": "East Cut / Transbay",
+   "lat": 37.7876,
+   "lng": -122.3968,
+   "block": "3721",
+   "lot": "008"
+  },
+  {
+   "id": "250-4th",
+   "name": "250 4th Street",
+   "corridor": "downtown",
+   "area": "Yerba Buena",
+   "lat": 37.7828,
+   "lng": -122.4018,
+   "block": "3733",
+   "lot": "065"
+  },
+  {
+   "id": "44-montgomery",
+   "name": "44 Montgomery Street",
+   "corridor": "downtown",
+   "area": "Financial District",
+   "lat": 37.7895,
+   "lng": -122.4019,
+   "block": "0292",
+   "lot": "009"
+  },
+  {
+   "id": "50-fremont",
+   "name": "50 Fremont Street",
+   "corridor": "downtown",
+   "area": "South of Market / East Cut",
+   "lat": 37.7907,
+   "lng": -122.3972,
+   "block": "3709",
+   "lot": "019"
+  },
+  {
+   "id": "4555-mission",
+   "name": "4555 Mission Street",
+   "corridor": "excelsior",
+   "area": "Excelsior",
+   "lat": 37.7256,
+   "lng": -122.4346,
+   "block": "6272",
+   "lot": "012"
+  },
+  {
+   "id": "4811-mission",
+   "name": "4811 Mission Street",
+   "corridor": "excelsior",
+   "area": "Excelsior",
+   "lat": 37.7212,
+   "lng": -122.4367,
+   "block": "6273",
+   "lot": "014"
+  },
+  {
+   "id": "4700-mission",
+   "name": "4700 Mission Street",
+   "corridor": "excelsior",
+   "area": "Excelsior",
+   "lat": 37.7232,
+   "lng": -122.4356,
+   "block": "6272",
+   "lot": "041"
+  },
+  {
+   "id": "4520-mission",
+   "name": "4520 Mission Street",
+   "corridor": "excelsior",
+   "area": "Excelsior",
+   "lat": 37.7264,
+   "lng": -122.4341,
+   "block": "6271",
+   "lot": "022"
+  },
+  {
+   "id": "4400-mission",
+   "name": "4400 Mission Street",
+   "corridor": "excelsior",
+   "area": "Excelsior",
+   "lat": 37.7286,
+   "lng": -122.4329,
+   "block": "6269",
+   "lot": "018"
+  },
+  {
+   "id": "4900-mission",
+   "name": "4900 Mission Street",
+   "corridor": "excelsior",
+   "area": "Excelsior / Crocker-Amazon",
+   "lat": 37.7194,
+   "lng": -122.4379,
+   "block": "6274",
+   "lot": "001"
+  },
+  {
+   "id": "2080-mission",
+   "name": "2080 Mission Street",
+   "corridor": "mission",
+   "area": "The Mission · 16th–17th",
+   "lat": 37.7642,
+   "lng": -122.4195,
+   "block": "3570",
+   "lot": "018"
+  },
+  {
+   "id": "2234-mission",
+   "name": "2234 Mission Street",
+   "corridor": "mission",
+   "area": "The Mission · 18th",
+   "lat": 37.7616,
+   "lng": -122.4194,
+   "block": "3593",
+   "lot": "006"
+  },
+  {
+   "id": "2372-mission",
+   "name": "2372 Mission Street",
+   "corridor": "mission",
+   "area": "The Mission · 19th–20th",
+   "lat": 37.7595,
+   "lng": -122.4193,
+   "block": "3594",
+   "lot": "022"
+  },
+  {
+   "id": "2489-mission",
+   "name": "2489 Mission Street",
+   "corridor": "mission",
+   "area": "The Mission · 21st",
+   "lat": 37.7575,
+   "lng": -122.4192,
+   "block": "3616",
+   "lot": "011"
+  },
+  {
+   "id": "2648-mission",
+   "name": "2648 Mission Street",
+   "corridor": "mission",
+   "area": "The Mission · 22nd–23rd",
+   "lat": 37.7548,
+   "lng": -122.419,
+   "block": "3637",
+   "lot": "004"
+  },
+  {
+   "id": "2779-mission",
+   "name": "2779 Mission Street",
+   "corridor": "mission",
+   "area": "The Mission · 24th",
+   "lat": 37.7528,
+   "lng": -122.4188,
+   "block": "3641",
+   "lot": "019"
+  },
+  {
+   "id": "1198-valencia",
+   "name": "1198 Valencia Street",
+   "corridor": "mission",
+   "area": "The Mission · Valencia & 24th",
+   "lat": 37.754,
+   "lng": -122.421,
+   "block": "3642",
+   "lot": "001"
+  },
+  {
+   "id": "140-turk",
+   "name": "140 Turk Street",
+   "corridor": "tenderloin",
+   "area": "Tenderloin",
+   "lat": 37.7832,
+   "lng": -122.414,
+   "block": "0334",
+   "lot": "012"
+  },
+  {
+   "id": "249-eddy",
+   "name": "249 Eddy Street",
+   "corridor": "tenderloin",
+   "area": "Tenderloin",
+   "lat": 37.7841,
+   "lng": -122.4125,
+   "block": "0335",
+   "lot": "008"
+  },
+  {
+   "id": "301-hyde",
+   "name": "301 Hyde Street",
+   "corridor": "tenderloin",
+   "area": "Tenderloin",
+   "lat": 37.7836,
+   "lng": -122.4157,
+   "block": "0345",
+   "lot": "001"
+  },
+  {
+   "id": "468-larkin",
+   "name": "468 Larkin Street",
+   "corridor": "tenderloin",
+   "area": "Tenderloin / Little Saigon",
+   "lat": 37.7815,
+   "lng": -122.4169,
+   "block": "0331",
+   "lot": "016"
+  },
+  {
+   "id": "520-jones",
+   "name": "520 Jones Street",
+   "corridor": "tenderloin",
+   "area": "Tenderloin / Lower Nob",
+   "lat": 37.7855,
+   "lng": -122.4128,
+   "block": "0317",
+   "lot": "009"
+  },
+  {
+   "id": "1300-fillmore",
+   "name": "1300 Fillmore Street",
+   "corridor": "fillmore",
+   "area": "Fillmore Jazz District",
+   "lat": 37.7815,
+   "lng": -122.4324,
+   "block": "0732",
+   "lot": "014"
+  },
+  {
+   "id": "1400-fillmore",
+   "name": "1400 Fillmore Street",
+   "corridor": "fillmore",
+   "area": "Fillmore Jazz District",
+   "lat": 37.783,
+   "lng": -122.4325,
+   "block": "0733",
+   "lot": "001"
+  },
+  {
+   "id": "1500-fillmore",
+   "name": "1500 Fillmore Street",
+   "corridor": "fillmore",
+   "area": "Fillmore Jazz District",
+   "lat": 37.7842,
+   "lng": -122.4326,
+   "block": "0675",
+   "lot": "021"
+  },
+  {
+   "id": "1555-fillmore",
+   "name": "1555 Fillmore Street",
+   "corridor": "fillmore",
+   "area": "Fillmore Jazz District",
+   "lat": 37.7848,
+   "lng": -122.4328,
+   "block": "0674",
+   "lot": "033"
+  },
+  {
+   "id": "1200-fillmore",
+   "name": "1200 Fillmore Street",
+   "corridor": "fillmore",
+   "area": "Fillmore / Western Addition",
+   "lat": 37.78,
+   "lng": -122.4323,
+   "block": "0731",
+   "lot": "007"
+  },
+  {
+   "id": "4400-third",
+   "name": "4400 3rd Street",
+   "corridor": "bayview",
+   "area": "Bayview",
+   "lat": 37.7388,
+   "lng": -122.3902,
+   "block": "5253",
+   "lot": "024"
+  },
+  {
+   "id": "4600-third",
+   "name": "4600 3rd Street",
+   "corridor": "bayview",
+   "area": "Bayview",
+   "lat": 37.7365,
+   "lng": -122.3898,
+   "block": "5278",
+   "lot": "011"
+  },
+  {
+   "id": "4800-third",
+   "name": "4800 3rd Street",
+   "corridor": "bayview",
+   "area": "Bayview",
+   "lat": 37.734,
+   "lng": -122.3895,
+   "block": "5311",
+   "lot": "008"
+  },
+  {
+   "id": "5000-third",
+   "name": "5000 3rd Street",
+   "corridor": "bayview",
+   "area": "Bayview",
+   "lat": 37.7315,
+   "lng": -122.3892,
+   "block": "5331",
+   "lot": "015"
+  },
+  {
+   "id": "5200-third",
+   "name": "5200 3rd Street",
+   "corridor": "bayview",
+   "area": "Bayview",
+   "lat": 37.729,
+   "lng": -122.389,
+   "block": "5352",
+   "lot": "003"
+  },
+  {
+   "id": "801-irving",
+   "name": "801 Irving Street",
+   "corridor": "sunset",
+   "area": "Inner Sunset · 9th Ave",
+   "lat": 37.764,
+   "lng": -122.4648,
+   "block": "1763",
+   "lot": "018"
+  },
+  {
+   "id": "1234-irving",
+   "name": "1234 Irving Street",
+   "corridor": "sunset",
+   "area": "Inner Sunset · 12th–13th",
+   "lat": 37.7638,
+   "lng": -122.47,
+   "block": "1765",
+   "lot": "007"
+  },
+  {
+   "id": "1432-irving",
+   "name": "1432 Irving Street",
+   "corridor": "sunset",
+   "area": "Inner Sunset · 15th Ave",
+   "lat": 37.7637,
+   "lng": -122.473,
+   "block": "1766",
+   "lot": "021"
+  },
+  {
+   "id": "1734-irving",
+   "name": "1734 Irving Street",
+   "corridor": "sunset",
+   "area": "Inner Sunset · 19th Ave",
+   "lat": 37.7636,
+   "lng": -122.4772,
+   "block": "1768",
+   "lot": "014"
+  },
+  {
+   "id": "1640-taraval",
+   "name": "1640 Taraval Street",
+   "corridor": "sunset",
+   "area": "Outer Sunset · Taraval",
+   "lat": 37.7432,
+   "lng": -122.4825,
+   "block": "2394",
+   "lot": "009"
+  },
+  {
+   "id": "214-clement",
+   "name": "214 Clement Street",
+   "corridor": "richmond",
+   "area": "Inner Richmond · Clement",
+   "lat": 37.783,
+   "lng": -122.4608,
+   "block": "1428",
+   "lot": "012"
+  },
+  {
+   "id": "418-clement",
+   "name": "418 Clement Street",
+   "corridor": "richmond",
+   "area": "Inner Richmond · Clement",
+   "lat": 37.7829,
+   "lng": -122.4645,
+   "block": "1430",
+   "lot": "006"
+  },
+  {
+   "id": "640-clement",
+   "name": "640 Clement Street",
+   "corridor": "richmond",
+   "area": "Inner Richmond · Clement",
+   "lat": 37.7828,
+   "lng": -122.4678,
+   "block": "1432",
+   "lot": "019"
+  },
+  {
+   "id": "812-clement",
+   "name": "812 Clement Street",
+   "corridor": "richmond",
+   "area": "Inner Richmond · Clement",
+   "lat": 37.7827,
+   "lng": -122.4708,
+   "block": "1434",
+   "lot": "003"
+  },
+  {
+   "id": "5210-geary",
+   "name": "5210 Geary Boulevard",
+   "corridor": "richmond",
+   "area": "Central Richmond · Geary",
+   "lat": 37.7806,
+   "lng": -122.4758,
+   "block": "1515",
+   "lot": "027"
+  },
+  {
+   "id": "1845-noriega",
+   "name": "1845 Noriega Street",
+   "corridor": "outersunset",
+   "area": "Outer Sunset · 28th Ave",
+   "lat": 37.754,
+   "lng": -122.4865,
+   "block": "2061",
+   "lot": "016"
+  },
+  {
+   "id": "2334-noriega",
+   "name": "2334 Noriega Street",
+   "corridor": "outersunset",
+   "area": "Outer Sunset · 33rd Ave",
+   "lat": 37.7536,
+   "lng": -122.4915,
+   "block": "2064",
+   "lot": "008"
+  },
+  {
+   "id": "3201-taraval",
+   "name": "3201 Taraval Street",
+   "corridor": "outersunset",
+   "area": "Outer Sunset · 40th Ave",
+   "lat": 37.7424,
+   "lng": -122.4988,
+   "block": "2374",
+   "lot": "001"
+  },
+  {
+   "id": "2445-clement",
+   "name": "2445 Clement Street",
+   "corridor": "outerrichmond",
+   "area": "Outer Richmond · 25th Ave",
+   "lat": 37.7823,
+   "lng": -122.4858,
+   "block": "1408",
+   "lot": "022"
+  },
+  {
+   "id": "3134-clement",
+   "name": "3134 Clement Street",
+   "corridor": "outerrichmond",
+   "area": "Outer Richmond · 32nd Ave",
+   "lat": 37.782,
+   "lng": -122.4928,
+   "block": "1461",
+   "lot": "011"
+  },
+  {
+   "id": "3418-balboa",
+   "name": "3418 Balboa Street",
+   "corridor": "outerrichmond",
+   "area": "Outer Richmond · Balboa",
+   "lat": 37.7756,
+   "lng": -122.4965,
+   "block": "1588",
+   "lot": "007"
+  },
+  {
+   "id": "1255-ocean",
+   "name": "1255 Ocean Avenue",
+   "corridor": "ocean",
+   "area": "Ocean Ave · 19th / SFSU / Parkmerced edge",
+   "lat": 37.7236,
+   "lng": -122.4755,
+   "block": "6935",
+   "lot": "014"
+  },
+  {
+   "id": "800-ocean",
+   "name": "800 Ocean Avenue",
+   "corridor": "ocean",
+   "area": "Ocean Ave · Ingleside / City College",
+   "lat": 37.7242,
+   "lng": -122.4678,
+   "block": "6944",
+   "lot": "003"
+  },
+  {
+   "id": "701-font",
+   "name": "701 Font Boulevard",
+   "corridor": "ocean",
+   "area": "Parkmerced village retail",
+   "lat": 37.7218,
+   "lng": -122.4805,
+   "block": "7308",
+   "lot": "001"
+  }
+ ]
+}
