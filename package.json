@@ -8,7 +8,8 @@
     "start": "node server.js",
     "test": "node --test test/*.test.js",
     "snapshot": "node scripts/snapshot.js",
-    "neighborhoods": "node scripts/neighborhoods.js"
+    "neighborhoods": "node scripts/neighborhoods.js",
+    "vacancy": "node scripts/vacancy.js"
   },
   "engines": {
     "node": ">=20.12"
