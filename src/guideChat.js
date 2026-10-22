@@ -29,15 +29,24 @@ const TOOLS = [
   { name: 'check_listing', description: 'Compare the broker listing for 2234 Mission Street against city records.', input_schema: { type: 'object', properties: {} } },
 ];
 
-export async function guideChat({ hw, client, evidence, snapshot, sites, history, model = DEFAULT_MODEL }) {
+export async function guideChat({ hw, client, evidence, snapshot, sites, history, context, model = DEFAULT_MODEL }) {
   const messages = (history || []).slice(-12).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.role === 'assistant' ? String(m.content).slice(0, 2000) : redact(m.content) }))
     .filter((m) => m.content);
   if (!messages.length || messages[messages.length - 1].role !== 'user') throw new Error('send a user message');
+  // What the user already chose on screen (public choices only; redacted like chat text).
+  const ctx = context && typeof context === 'object' ? {
+    business_types: (context.business_types || []).filter((k) => BUSINESS_TYPES[k]).slice(0, 2),
+    idea_text: context.idea_text ? redact(String(context.idea_text).slice(0, 200)) : null,
+    neighborhoods: (context.neighborhoods || []).filter((k) => NEIGHBORHOODS[k]).slice(0, 3),
+    storefront: context.storefront ? String(context.storefront).slice(0, 80) : null,
+    priority: ['buildout', 'similar', 'momentum'].includes(context.priority) ? context.priority : null,
+  } : null;
+  const system = ctx ? `${SYSTEM}\nWhat the user has already selected on screen (use it, consider ALL selected types together, don't ask again): ${JSON.stringify(ctx)}` : SYSTEM;
   const modelLog = [];
   const used = [];
   for (let turn = 0; turn < 5; turn++) {
     modelLog.push(JSON.parse(JSON.stringify(messages)));
-    const res = await client.messages.create({ model, max_tokens: 700, system: SYSTEM, tools: TOOLS, messages });
+    const res = await client.messages.create({ model, max_tokens: 700, system, tools: TOOLS, messages });
     messages.push({ role: 'assistant', content: res.content });
     const uses = res.content.filter((b) => b.type === 'tool_use');
     if (!uses.length) {

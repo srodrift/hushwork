@@ -125,7 +125,7 @@ router.post('/chat', wrap(async (req, res) => {
   if (!c) { res.status(503); return { ok: false, error: 'The AI guide needs ANTHROPIC_API_KEY on the server.' }; }
   const evidence = readJsonSafe(new URL('../data/neighborhood_evidence.json', import.meta.url));
   const sites = readJsonSafe(new URL('../data/sites.json', import.meta.url))?.sites || [];
-  return { ok: true, ...(await guideChat({ hw, client: c, evidence, snapshot: loadSnapshot(), sites, history: req.body?.history })) };
+  return { ok: true, ...(await guideChat({ hw, client: c, evidence, snapshot: loadSnapshot(), sites, history: req.body?.history, context: req.body?.context })) };
 }));
 
 // ---- Market rent context (citywide, sourced) + private comparison ----

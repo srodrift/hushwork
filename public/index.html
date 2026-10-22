@@ -8,8 +8,8 @@
 <link rel="stylesheet" href="/hushwork.css">
 <style>
 *{transition:none!important;animation:none!important}
-nav .in{max-width:1180px}
-.flow{max-width:1180px;margin:0 auto;padding:28px 22px 120px}
+nav .in{max-width:1400px}
+.flow{max-width:1400px;margin:0 auto;padding:28px 22px 120px}
 @media (max-width:600px){.flow{padding:20px 16px 120px}}
 .progress{display:flex;gap:6px;margin-bottom:10px}
 .progress span{flex:1;height:4px;border-radius:4px;background:var(--line)}
@@ -18,7 +18,7 @@ nav .in{max-width:1180px}
 .step{display:none;background:none;box-shadow:none;padding:0;border-radius:0}
 .step.on{display:block}
 .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:36px;align-items:start}
-.split .mapslot #map{height:560px;margin-top:0}
+.split .mapslot #map{height:max(480px,calc(100vh - 230px));margin-top:0}
 @media (max-width:960px){.split{grid-template-columns:1fr;gap:16px}.split .mapslot #map{height:340px}}
 .narrow{max-width:820px}
 .step h1{font:600 clamp(28px,4.4vw,40px)/1.1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.03em;margin:6px 0 10px}
@@ -33,7 +33,7 @@ nav .in{max-width:1180px}
 .option small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
 .option[disabled]{opacity:.4;cursor:not-allowed}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--nav);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--hair);z-index:20}
-.bar .in{max-width:1180px;margin:0 auto;padding:12px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.bar .in{max-width:1400px;margin:0 auto;padding:12px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .bar .hint{font-size:13px;color:var(--muted);flex:1;text-align:center}
 .note{font-size:14px;color:var(--muted);margin-top:10px}
 .card{background:var(--card);border-radius:18px;padding:20px;box-shadow:var(--shadow);margin-bottom:14px}
@@ -210,7 +210,8 @@ function go(n) {
   S.step = Math.max(1, Math.min(TOTAL, n));
   document.querySelectorAll('.step').forEach((s) => s.classList.toggle('on', Number(s.dataset.step) === S.step));
   $('progress').innerHTML = Array.from({ length: TOTAL }, (_, i) => `<span class="${i < S.step ? 'on' : ''}"></span>`).join('');
-  $('stepno').textContent = `Step ${S.step} of ${TOTAL}`;
+  $('stepno').textContent = S.step === 1 ? '' : `Step ${S.step} of ${TOTAL}`;
+  $('progress').style.visibility = S.step === 1 ? 'hidden' : 'visible';
   window.scrollTo(0, 0);
   const slot = document.querySelector(`.step.on .mapslot`);
   if (slot) { slot.appendChild($('map')); if (!S.map) initMap(); else S.map.resize(); }
@@ -252,7 +253,7 @@ function afterTypes() {
 }
 function matchCustom() {
   const q = $('custom').value.trim().toLowerCase();
-  if (!q) { $('customNote').textContent = 'Type an idea first.'; return; }
+  if (!q) { $('customNote').textContent = ''; return; }
   const hits = CUSTOM_MAP.filter(([, words]) => words.some((w) => q.includes(w))).map(([k]) => k).slice(0, 2);
   const extras = ['craft', 'handicraft', 'art', 'gift', 'clothing', 'boutique', 'jewelry', 'gallery'].filter((w) => q.includes(w));
   if (hits.length) {
@@ -559,7 +560,9 @@ async function say(text) {
   CH.push({ role: 'user', content: text }); addMsg('user', text); $('chatOpts').innerHTML = ''; $('chatIn').value = '';
   const wait = document.createElement('div'); wait.className = 'msg ai'; wait.textContent = 'Checking city records and programs…'; $('chatLog').appendChild(wait);
   try {
-    const r = await api('/api/chat', { history: CH });
+    const site = S.meta?.sites.find((x) => x.id === S.site);
+    const context = { business_types: typesOf().map((t) => t.key), idea_text: $('custom').value.trim() || null, neighborhoods: S.hoods, storefront: site ? site.name : null, priority: S.prio };
+    const r = await api('/api/chat', { history: CH, context });
     wait.remove(); CH.push({ role: 'assistant', content: r.reply }); addMsg('assistant', r.reply);
     $('chatOpts').innerHTML = (r.options || []).map((o) => `<button data-say="${esc(o)}">${esc(o)}</button>`).join('');
   } catch (e) { wait.textContent = 'Sorry, the guide is unavailable: ' + e.message; CH.pop(); }
