@@ -134,16 +134,27 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
   </section>
 
   <section class="step narrow" data-step="6">
-    <h1>Money that may fit</h1>
-    <p class="lead">Four quick questions. Private answers stay in the vault. Trusted code checks each program's published rules and returns only yes, no, or unknown.</p>
-    <div class="row2">
-      <div><label for="fYears">Years in business <span class="chip private">private</span></label><input id="fYears" type="number" min="0" value="0"></div>
-      <div><label for="fRevenue">Annual revenue <span class="chip private">private</span></label><input id="fRevenue" value="$0"></div>
-      <div><label for="fLease">Lease <span class="chip private">private</span></label><select id="fLease"><option value="no_lease_yet">No lease yet</option><option value="signed_new">Signed a new lease (Oct 2025 or later)</option><option value="signed">Signed an older lease</option></select></div>
-      <div><label>Seating for customers?</label><div class="choices"><button class="choice" data-dining="true" aria-pressed="true">Yes</button><button class="choice" data-dining="false" aria-pressed="false">No</button></div></div>
+    <h1>Money and help</h1>
+    <p class="lead">Where first-time founders in San Francisco find grants, loans and free help. Every link checked Oct 22, 2026.</p>
+    <div class="card">
+      <div class="fact"><b>Grants</b><span><a href="https://www.sf.gov/information--find-grant-your-small-business" target="_blank" rel="noopener">SF.gov: find a grant for your small business</a> (city grants; many rounds are closed right now)</span></div>
+      <div class="fact"><b>Loans</b><span><a href="https://www.sf.gov/information--loans-and-borrowing-money-your-business" target="_blank" rel="noopener">SF.gov: loans for your business</a>, including <a href="https://www.kiva.org/borrow" target="_blank" rel="noopener">Kiva</a> (up to $15,000 at 0%) and <a href="http://www.workingsolutions.org/" target="_blank" rel="noopener">Working Solutions</a> (includes ITIN holders)</span></div>
+      <div class="fact"><b>Food</b><span><a href="https://www.lacocinasf.org/apply" target="_blank" rel="noopener">La Cocina incubator</a>: kitchen space, training and mentorship</span></div>
+      <div class="fact"><b>Free help</b><span><a href="https://www.sfsbdc.org/" target="_blank" rel="noopener">SF Small Business Development Center</a>: advisers for loans, plans and credit</span></div>
     </div>
-    <div style="margin-top:18px"><button id="fCheck">Check what fits</button></div>
-    <div id="funding" style="margin-top:22px"></div>
+    <label for="budgetRange">Your budget <span class="chip private">private</span>: <b id="budgetShow">$80,000</b></label>
+    <input id="budgetRange" type="range" min="10000" max="300000" step="5000" value="80000" style="padding:0">
+    <div class="note" style="margin-top:4px">Saved privately in the vault. Never sent to the AI.</div>
+    <details style="margin-top:14px"><summary>Check privately which programs fit you</summary>
+      <div class="row2" style="margin-top:10px">
+        <div><label for="fYears">Years in business <span class="chip private">private</span></label><input id="fYears" type="number" min="0" value="0"></div>
+        <div><label for="fRevenue">Annual revenue <span class="chip private">private</span></label><input id="fRevenue" value="$0"></div>
+        <div><label for="fLease">Lease <span class="chip private">private</span></label><select id="fLease"><option value="no_lease_yet">No lease yet</option><option value="signed_new">Signed a new lease (Oct 2025 or later)</option><option value="signed">Signed an older lease</option></select></div>
+        <div><label>Seating for customers?</label><div class="choices"><button class="choice" data-dining="true" aria-pressed="true">Yes</button><button class="choice" data-dining="false" aria-pressed="false">No</button></div></div>
+      </div>
+      <div style="margin-top:14px"><button id="fCheck">Check what fits</button></div>
+      <div id="funding" style="margin-top:18px"></div>
+    </details>
   </section>
 
   <section class="step narrow" data-step="7">
@@ -320,8 +331,15 @@ function initMap() {
       const s = S.meta.sites.find((x) => x.id === e.features[0].properties.id);
       new maplibregl.Popup({ closeButton: false }).setLngLat([s.lng, s.lat]).setHTML(`<b>${esc(s.name)}</b><br>${esc(hoodName(s.corridor))}<br><span style="color:#6e6e73">Vacancy not verified</span>`).addTo(map);
     });
-    loadBoundaries(map);
+    loadBoundaries(map).then(() => { if (!S.bounds) addAreaCircles(map); });
+    map.on('click', 'areas', (e) => { if (!map.queryRenderedFeatures(e.point, { layers: ['sites'] }).length) toggleHood(e.features[0].properties.key); });
+    map.on('mouseenter', 'areas', () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', 'areas', () => map.getCanvas().style.cursor = '');
   });
+  const tg = document.createElement('button'); tg.className = 'ghost small'; tg.textContent = '2D'; tg.id = 'dimToggle';
+  tg.style.cssText = 'position:absolute;left:10px;top:10px;z-index:2;background:var(--card)';
+  tg.onclick = (e) => { e.stopPropagation(); const flat = map.getPitch() > 5; map.jumpTo({ pitch: flat ? 0 : 50, bearing: flat ? 0 : -15 }); tg.textContent = flat ? '3D' : '2D'; };
+  $('map').appendChild(tg);
   S.map = map;
 }
 async function loadBoundaries(map) {
@@ -348,12 +366,27 @@ async function loadBoundaries(map) {
     map.on('mouseleave', 'hood-fill', () => { map.getCanvas().style.cursor = ''; });
   } catch { $('mapNote').textContent = 'Neighborhood outlines could not load, so use the buttons above. Dots are storefront addresses on our list, not confirmed vacancies.'; }
 }
+function areasData() {
+  const feats = S.meta.neighborhoods.map((n) => {
+    const pts = S.meta.sites.filter((x) => x.corridor === n.key); if (!pts.length) return null;
+    const lng = pts.reduce((a, x) => a + x.lng, 0) / pts.length, lat = pts.reduce((a, x) => a + x.lat, 0) / pts.length;
+    return { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: { key: n.key, name: n.name, chosen: S.hoods.includes(n.key) } };
+  }).filter(Boolean);
+  return { type: 'FeatureCollection', features: feats };
+}
+function addAreaCircles(map) {
+  map.addSource('areas', { type: 'geojson', data: areasData() });
+  map.addLayer({ id: 'areas', type: 'circle', source: 'areas', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 26, 14, 90], 'circle-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'], 'circle-opacity': ['case', ['get', 'chosen'], 0.22, 0.06], 'circle-stroke-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'], 'circle-stroke-width': 1.5, 'circle-stroke-opacity': 0.5 } }, 'sites');
+  map.addLayer({ id: 'area-labels', type: 'symbol', source: 'areas', layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0, -2.2], 'text-font': ['Noto Sans Bold'] }, paint: { 'text-color': '#1d1d1f', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } });
+  $('mapNote').textContent = 'Click a neighborhood circle to add or remove it. Circles mark where our storefront addresses cluster (approximate areas). Dots are addresses, not confirmed vacancies.';
+}
 const boundsData = () => ({ ...S.bounds, features: S.bounds.features.map((f, i) => ({ ...f, id: i, properties: { ...f.properties, chosen: S.hoods.includes(f.properties.key) } })) });
 const geo = () => ({ type: 'FeatureCollection', features: S.meta.sites.map((s) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lng, s.lat] }, properties: { id: s.id, chosen: S.hoods.includes(s.corridor) } })) });
 function updateMap() {
   const m = S.map; if (!m || !m.getSource('sites')) return;
   m.getSource('sites').setData(geo());
   if (S.bounds && m.getSource('hoods')) m.getSource('hoods').setData(boundsData());
+  if (m.getSource('areas')) m.getSource('areas').setData(areasData());
 }
 
 // Step 4
@@ -446,18 +479,19 @@ function renderSites() {
     : '<div class="empty">No storefronts on our list in these neighborhoods yet. Go back and add The Mission or another neighborhood.</div>';
   renderSiteDetail().catch(showErr);
 }
+const gmaps = (s) => `<div style="margin:4px 0 8px;font-size:14px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ', San Francisco, CA')}" target="_blank" rel="noopener">Open in Google Maps</a> · <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}" target="_blank" rel="noopener">Street View</a></div>`;
 async function renderSiteDetail() {
   const s = S.meta.sites.find((x) => x.id === S.site);
   if (!s) { $('siteDetail').innerHTML = ''; return; }
   if (s.id !== S.meta.privateAgentSite) {
-    $('siteDetail').innerHTML = `<div class="card"><h3>${esc(s.name)}</h3><p class="note">We haven't pulled city records for this address yet, so we can't check it. Ask the owner whether it's available, the full rent, and the last legal use. You can still continue to funding and your checklist.</p></div>`;
+    $('siteDetail').innerHTML = `<div class="card"><h3>${esc(s.name)}</h3>${gmaps(s)}<p class="note">We haven't pulled city records for this address yet, so we can't check it. Ask the owner whether it's available, the full rent, and the last legal use. You can still continue to funding and your checklist.</p></div>`;
     return;
   }
   $('siteDetail').innerHTML = '<div class="note">Checking city records…</div>';
   const [c, lh] = await Promise.all([api('/api/claims/mission_1'), api('/api/guide/local-help/2234-mission')]);
   const sup = lh.card.supervisor;
   $('siteDetail').innerHTML = `<div class="card">
-    <h3>${esc(s.name)}</h3>
+    <h3>${esc(s.name)}</h3>${gmaps(s)}
     <div class="note" style="margin-top:0">A broker listing for this space says three things. Here's what city records say.</div>
     ${c.claims.map((x) => `<div class="fact" style="display:block"><div class="big ${VERDICT[x.verdict][0]}" style="font-size:16px;margin:0">${esc(VERDICT[x.verdict][1])}: “${esc(x.text)}”</div><div style="font-size:14px;color:var(--muted);margin-top:2px">${esc(x.explanation)}</div></div>`).join('')}
     <details><summary>History of this space</summary>
@@ -615,6 +649,8 @@ document.addEventListener('click', async (e) => {
   S.custom = { ...S.custom, words: r.words, food: r.food, live: r }; renderCustom(); renderPrios(); updateBar();
 });
 document.addEventListener('click', (e) => { if (e.target.id === 'editIdea') { e.preventDefault(); go(1); } });
+$('budgetRange').addEventListener('input', () => { $('budgetShow').textContent = '$' + Number($('budgetRange').value).toLocaleString() + ($('budgetRange').value === '300000' ? '+' : ''); });
+$('budgetRange').addEventListener('change', () => api('/api/profile', { field: 'investment_budget', value: $('budgetShow').textContent }).catch(() => {}));
 $('custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') matchCustom(); });
 
 (async () => {

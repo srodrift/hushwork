@@ -11,7 +11,7 @@ Rules:
 - You do not know the user's private values. Refer to private fields only as {{tokens}}. Use only fields needed for a first lease inquiry.
 - Public records show history (past businesses, permits). They do NOT establish current vacancy, rent, zoning approval, or suitability. Say "unknown" when records do not show something.
 - Broker listing text (including asking rent) is unverified.
-Steps: 1) optionally call budget_check(listing_id) once; 2) call draft_inquiry once for the listing's recipient; 3) call submit_report with your findings. Cite each finding with the record "ref" it came from.`;
+Steps: 1) optionally call budget_check(listing_id) once; 2) call draft_inquiry for the listing's recipient using ONLY the tokens listed as allowed for that recipient; if it comes back blocked, redraft once without the blocked tokens; 3) call submit_report with your findings. Cite each finding with the record "ref" it came from.`;
 
 const TOOLS = [
   {
@@ -80,9 +80,10 @@ export async function runInvestigation({ hw, client, snapshot, listingId, busine
     storefront: compactStorefront(snapshot),
     listing: { id: listing.id, label: listing.label, recipient_id: listing.recipientId, address: listing.address, asking_rent_monthly_unverified: listing.askingRentMonthly, description: listing.description },
   });
+  const allowed = hw.listGrants().filter((g) => g.recipientId === listing.recipientId && !g.revoked).map((g) => `{{${g.field}}}`);
   const messages = [{
     role: 'user',
-    content: `The founder wants to open a ${String(businessType).slice(0, 60)}. Investigate listing ${listing.id}.\n\nAVAILABLE_TOKENS: ${ctx.availableTokens.join(' ')}\nRECIPIENTS: ${JSON.stringify(ctx.recipients)}\nNOTE: ${ctx.instructions}\n\n<PUBLIC_DATA>\n${JSON.stringify(ctx.publicData, null, 1)}\n</PUBLIC_DATA>`,
+    content: `The founder wants to open a ${String(businessType).slice(0, 60)}. Investigate listing ${listing.id}.\n\nTOKENS_ALLOWED_FOR_${listing.recipientId}: ${allowed.join(' ') || '(none)'}\nAVAILABLE_TOKENS: ${ctx.availableTokens.join(' ')}\nRECIPIENTS: ${JSON.stringify(ctx.recipients)}\nNOTE: ${ctx.instructions}\n\n<PUBLIC_DATA>\n${JSON.stringify(ctx.publicData, null, 1)}\n</PUBLIC_DATA>`,
   }];
 
   const modelLog = []; // everything the model saw, per request
