@@ -1,6 +1,7 @@
 // Guided location-selection API. Read-only over public data snapshots.
 import express from 'express';
 import { readFileSync, existsSync } from 'node:fs';
+import { localHelpCard, draftRequest } from './localHelp.js';
 import { BUSINESS_TYPES, NEIGHBORHOODS, SIGNALS, RESOURCES, compare, helpMeChoose, checklist } from './guide.js';
 
 const EVIDENCE_PATH = process.env.HUSHWORK_EVIDENCE
@@ -44,5 +45,12 @@ router.post('/checklist', wrap((req) => {
   const site = sites().find((s) => s.id === req.body?.site_id) || null;
   return { result: checklist({ typeKey: req.body?.type, site }), resources: RESOURCES };
 }));
+
+router.get('/local-help/:siteId', wrap((req) => {
+  const site = sites().find((s) => s.id === req.params.siteId) || null;
+  return { card: localHelpCard({ site, snapshot: readJson(STOREFRONT_PATH), supportedSiteId: PRIVATE_AGENT_SITE }) };
+}));
+// Draft only. Nothing is sent; no vault values are read.
+router.post('/local-help/draft', wrap((req) => ({ draft: draftRequest(req.body || {}) })));
 
 export default router;

@@ -172,6 +172,7 @@
       <tr><td>Listing claims checked against city records (2234 Mission Street)</td><td><span class="working">Working</span></td></tr>
       <tr><td>Space history timeline from city records (2234 Mission Street)</td><td><span class="working">Working</span></td></tr>
       <tr><td>Funding fit: 10 programs verified Oct 22, 2026; private rules checked in trusted code</td><td><span class="working">Working</span></td></tr>
+      <tr><td>Local help card: supervisor district from city records, verified contact, editable request draft (2234 Mission Street)</td><td><span class="working">Working</span></td></tr>
       <tr><td>Private budget vault; AI investigation with exact-message consent (2234 Mission Street only)</td><td><span class="working">Working</span></td></tr>
       <tr><td>Rent, foot traffic, current vacancy, transit analysis</td><td><span class="planned">Unknown · no data source</span></td></tr>
       <tr><td>Housing, events, food resources, office space</td><td><span class="planned">Deferred</span></td></tr>
@@ -385,9 +386,9 @@ function renderSites() {
         <li><b>Why look:</b> it's on our storefront list in ${esc(hoodName(s.corridor))}, a neighborhood you chose.</li>
         <li><b>Verify:</b> availability, rent, condition${t.food ? ', past food use and kitchen equipment' : ''}, permitted use.</li>
       </ul>
-      ${priv ? `<div id="claimsPanel"><div class="note">Loading city records…</div></div><div style="margin-top:10px"><a href="/investigate.html"><button class="small">Investigate privately with AI →</button></a></div>` : `<div class="note"><span class="planned">Planned</span> City records and private AI investigation not pulled for this address yet.</div>`}
+      ${priv ? `<div id="localHelp"></div><div id="claimsPanel"><div class="note">Loading city records…</div></div><div style="margin-top:10px"><a href="/investigate.html"><button class="small">Investigate privately with AI →</button></a></div>` : `<div class="note"><span class="planned">Planned</span> City records and private AI investigation not pulled for this address yet.</div>`}
     </div>`; }).join('')}</div>`;
-  loadClaims();
+  loadClaims(); loadLocalHelp();
 }
 async function selectSite(id, scroll = true) {
   S.site = id; updateMap(false);
@@ -426,6 +427,33 @@ async function loadClaims() {
       <div class="note" style="margin-top:0">${esc(t.caution)}</div>
       <ul style="font-size:14px">${t.events.slice(0, 10).map((e) => `<li><span class="mono">${esc(e.date || '—')}</span> ${esc(e.text)}</li>`).join('')}</ul>
       <a href="${esc(t.sources.businesses)}" target="_blank" rel="noopener" style="font-size:13px">Business records</a> · <a href="${esc(t.sources.permits)}" target="_blank" rel="noopener" style="font-size:13px">Permit records</a> · <span class="note">retrieved ${esc(String(t.retrievedAt).slice(0, 10))}</span>` : ''}`;
+  } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+
+// ---------- Local help (city level) ----------
+async function loadLocalHelp() {
+  const el = $('localHelp'); if (!el) return;
+  try {
+    const { card: c } = await api('/api/guide/local-help/2234-mission');
+    const sup = c.supervisor;
+    el.innerHTML = `<label>Find the right local help</label>
+      <div class="note" style="margin-top:0">Start with the department that owns your question: ${c.firstContacts.map((f) => `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.who)}</a> (${esc(f.when.toLowerCase())})`).join('; ')}.</div>
+      ${sup ? `<div class="ev" style="padding:8px 0"><b>Supervisor District ${sup.district}: ${esc(sup.name)}</b>
+        <small>District from ${c.district.recordCount} city records for this address (${esc(c.district.from.join(' and '))}), not from the neighborhood name. Contact verified ${esc(c.verifiedOn)} on <a href="${esc(sup.source)}" target="_blank" rel="noopener">SF.gov</a>. ${esc(sup.phone)} · ${esc(sup.email)}</small></div>`
+        : `<div class="ev"><span class="unk">District not verified</span><small>${esc(c.district.reason)} <a href="${esc(c.lookup.url)}" target="_blank" rel="noopener">${esc(c.lookup.label)}</a></small></div>`}
+      <div class="row" style="align-items:flex-start;font-size:14px"><div><b>May help with</b><ul>${c.mayHelp.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div><div><b>Cannot</b><ul>${c.limits.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div></div>
+      <button class="ghost small" id="lhPrep">Prepare my request</button>
+      <div id="lhForm" style="display:none">
+        <label for="lhIssue">What do you need help with?</label><input id="lhIssue" value="figuring out which permits a bakery needs at this address">
+        <label for="lhPrev">What have you already tried?</label><input id="lhPrev" placeholder="e.g., called the Permit Center on Oct 20">
+        <label for="lhAsk">What are you asking for?</label><input id="lhAsk" value="a referral to the right department or contact">
+        <div style="margin-top:8px"><button class="small" id="lhMake">Write draft</button></div>
+        <textarea id="lhDraft" rows="8" style="margin-top:8px;display:none"></textarea>
+        <div class="note">Nothing is sent. Copy it into the office's contact form or email. No private vault values are included.</div>
+      </div>
+      <div class="note">State and federal representatives: planned, not built.</div>`;
+    S.lhSup = sup?.name || '';
   } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
 
@@ -501,6 +529,11 @@ document.addEventListener('click', async (e) => {
       document.querySelectorAll('[data-dining]').forEach((x) => x.setAttribute('aria-pressed', x === b));
     } else if (b.dataset.exp) {
       b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true');
+    } else if (b.id === 'lhPrep') {
+      $('lhForm').style.display = 'block';
+    } else if (b.id === 'lhMake') {
+      const { draft } = await api('/api/guide/local-help/draft', { issue: $('lhIssue').value, address: '2234 Mission Street', previousSteps: $('lhPrev').value, ask: $('lhAsk').value, supervisorName: S.lhSup });
+      $('lhDraft').style.display = 'block'; $('lhDraft').value = draft;
     } else if (b.id === 'fCheck') {
       b.disabled = true; try { await checkFunding(); } finally { b.disabled = false; }
     } else if (b.id === 'saveBudget') {
