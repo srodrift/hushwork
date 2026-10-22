@@ -5,6 +5,7 @@ import { createHushwork } from './core.js';
 import { runInvestigation, runAttackTest, DEFAULT_MODEL } from './agent.js';
 import { PROGRAMS } from './funding.js';
 import { MARKET_RENT, estimateMonthly } from './market.js';
+import { guideChat } from './guideChat.js';
 import { checkClaims, timeline } from './claims.js';
 import { evaluate, trueCost, tourChecklist, brokerTemplate, WORKSPACE_TYPES, COST_ITEMS } from './workspace.js';
 
@@ -115,6 +116,16 @@ router.post('/attack-test', wrap(async (req, res) => {
   }
   const r = await runAttackTest({ hw, client: c, snapshot: loadSnapshot() });
   return { ok: true, view, outboxToAttacker: hw.outbox().filter((o) => o.recipient === 'valencia_broker').length, ...r };
+}));
+
+// ---- Ask Hushwork chat ----
+const readJsonSafe = (u) => { try { return existsSync(u) ? JSON.parse(readFileSync(u, 'utf8')) : null; } catch { return null; } };
+router.post('/chat', wrap(async (req, res) => {
+  const c = await getClient();
+  if (!c) { res.status(503); return { ok: false, error: 'The AI guide needs ANTHROPIC_API_KEY on the server.' }; }
+  const evidence = readJsonSafe(new URL('../data/neighborhood_evidence.json', import.meta.url));
+  const sites = readJsonSafe(new URL('../data/sites.json', import.meta.url))?.sites || [];
+  return { ok: true, ...(await guideChat({ hw, client: c, evidence, snapshot: loadSnapshot(), sites, history: req.body?.history })) };
 }));
 
 // ---- Market rent context (citywide, sourced) + private comparison ----
