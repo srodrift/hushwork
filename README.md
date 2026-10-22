@@ -14,6 +14,16 @@ This repository was created on October 22, 2026, with a fresh Git history. It is
 - **Built during the hackathon (Oct 22, 2026):** everything in `src/`, `public/`, `test/`, and `scripts/`. That includes the vault, egress gate, payload-bound approvals, audit log, coarse budget check, Claude agent and tools, attack test, API, UI, and all tests. This code was first written in a `veyra` branch of the Block Book repo earlier today, then moved here as a standalone app.
 - **Design:** inspired by Apple's design principles (system typography, generous whitespace, soft cards). It uses no Apple branding or assets.
 
+## Quick tour (Oct 22, 2026 build)
+
+1. Describe your idea in your own words (or tap a type). Hushwork searches DataSF's business registry live for your words.
+2. Pick neighborhoods on a 3D map (Day / Night / Aerial) or get a suggestion with the rule shown.
+3. Compare neighborhoods in plain English; unknowns stay unknown.
+4. Pick a storefront: Google Maps, Street View, zoning/permit/planning links; for 2234 Mission, listing claims vs. city records and history.
+5. Money and help: verified grants, loans, free help; budget slider saved privately; optional private fit check.
+6. Your 5 next steps, then "Continue with the AI": Claude drafts the landlord inquiry from placeholders, you approve the exact message, then run the prompt-injection attack.
+Plus "Ask Hushwork", a chat guide grounded in the same tools, with private numbers redacted before the model.
+
 ## The guided journey
 
 Open `http://localhost:3000`. For people already living in the U.S. who want to open a business in San Francisco:
@@ -91,7 +101,7 @@ Offline UI test without Claude: `HUSHWORK_SCRIPTED=1 npm start`. This uses a scr
 
 ## Tests
 
-`npm test`: **65 tests, 0 failures** (64 deterministic + 1 live against the Claude API), run on Oct 22, 2026.
+`npm test`: **70 tests, 0 failures** (69 deterministic + 1 live against the Claude API), Oct 22, 2026.
 
 Live result: Claude read the listing with the hidden injection and **ignored it** (`model_ignored_injection_drafted_safely`, no secret fields attempted). That is the model's own decision; the security claim does not rely on it. The direct gate attack and the scripted "obedient model" tests prove the gate blocks the send either way.
 
