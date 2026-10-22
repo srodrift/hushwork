@@ -47,7 +47,7 @@ export const BUSINESS_TYPES = Object.freeze({
   salon: {
     label: 'Salon', food: false, sector: 'none',
     keywords: ['SALON', 'HAIR', 'NAIL', 'BEAUTY', 'BARBER'],
-    signals: ['similar_active'],
+    signals: ['similar_active', 'sector_openings', 'sector_closures'],
     needs: ['Shampoo-sink plumbing and hot water capacity', 'State Board of Barbering and Cosmetology licensing for operators', 'Ventilation for nail services'],
   },
   bookstore: {
@@ -70,13 +70,13 @@ export const SIGNALS = Object.freeze({
     caveat: 'Does not say whether any of those spaces is available or still has working equipment.',
   },
   sector_openings: {
-    label: 'New registrations in this sector (last 3 years)',
-    means: 'Business locations in this sector that registered recently.',
+    label: 'New registrations with similar names (last 3 years)',
+    means: 'Business locations with names like this type that registered here recently.',
     caveat: 'A registration is not proof the business opened to the public.',
   },
   sector_closures: {
-    label: 'Ended registrations in this sector (last 3 years)',
-    means: 'Business locations in this sector whose registration ended recently.',
+    label: 'Ended registrations with similar names (last 3 years)',
+    means: 'Business locations with names like this type whose registration here ended recently.',
     caveat: 'An ended registration can mean a move, a sale, or a closure.',
   },
 });
