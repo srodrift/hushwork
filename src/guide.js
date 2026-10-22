@@ -152,8 +152,13 @@ export const RESOURCES = Object.freeze({
   sba: { label: 'U.S. SBA business guide', url: 'https://www.sba.gov/business-guide' },
 });
 
-export function checklist({ typeKey, site }) {
-  const type = BUSINESS_TYPES[typeKey];
+export function checklist({ typeKey, site, custom }) {
+  const type = typeKey === 'custom' && custom ? {
+    label: String(custom.label || 'your business').slice(0, 60), food: !!custom.food,
+    needs: custom.food
+      ? ['Health permit and plan check for any food or drink you prepare', 'Hand and prep sinks; ventilation if you cook or bake', 'Confirm each part of your idea is allowed in the same space (mixed uses can need separate permits)']
+      : ['Confirm each part of your idea is an allowed use for the space', 'Any state licenses your services need (for example, cosmetology for salon services)', 'Accessibility and restrooms for customers'],
+  } : BUSINESS_TYPES[typeKey];
   if (!type) throw new Error('unknown business type');
   const where = site ? `${site.name} (block ${site.block}, lot ${site.lot})` : 'each storefront you consider';
   const sections = [

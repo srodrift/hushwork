@@ -87,8 +87,8 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
         <p class="lead">For people already living in the U.S. starting a business in San Francisco. Pick one or two, or describe a mix. Your answer decides which city records we look at.</p>
         <div class="choices" id="types"></div>
         <div style="margin-top:20px">
-          <label for="custom">Something else?</label>
-          <div class="row"><input id="custom" placeholder="e.g., croissant shop, momo counter, nail studio"><button class="ghost" id="customGo" style="flex:0 0 auto">Find closest</button></div>
+          <label for="custom">Or describe your idea in your own words</label>
+          <div class="row"><input id="custom" placeholder="e.g., croissant shop, momo counter, nail studio"><button class="ghost" id="customGo" style="flex:0 0 auto">Use my idea</button></div>
           <div class="note" id="customNote"></div>
         </div>
         <div class="note" style="margin-top:18px">55 storefront addresses across 11 neighborhoods. Saw one on a walk? You'll pick neighborhoods in step 3, or tap <b>Ask Hushwork</b> to talk it through.</div>
@@ -188,17 +188,17 @@ async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json(); if (!r.ok || j.ok === false) throw new Error(j.error || r.statusText); return j;
 }
-const S = { meta: null, step: 1, types: [], get type() { return this.types[0] || null; }, prio: null, hoods: [], site: null, map: null, bounds: null, checklist: null };
+const S = { meta: null, step: 1, custom: null, types: [], get type() { return this.types[0] || null; }, prio: null, hoods: [], site: null, map: null, bounds: null, checklist: null };
 const TOTAL = 7;
 const hoodName = (k) => S.meta.neighborhoods.find((n) => n.key === k)?.name || k;
 const typeOf = () => S.meta.types.find((t) => t.key === S.type);
 const noun = () => (typeOf()?.label || 'business').toLowerCase();
 const typesOf = () => S.types.map((k) => S.meta.types.find((t) => t.key === k)).filter(Boolean);
-const anyFood = () => typesOf().some((t) => t.food);
-const nouns = () => typesOf().map((t) => t.label.toLowerCase()).join(' + ') || 'business';
+const anyFood = () => typesOf().some((t) => t.food) || !!S.custom?.food;
+const nouns = () => S.custom?.words.length ? S.custom.words.join(' + ') : (typesOf().map((t) => t.label.toLowerCase()).join(' + ') || 'business');
 
 const canContinue = {
-  1: () => S.types.length > 0 || 'Pick what you want to open',
+  1: () => S.types.length > 0 || !!S.custom?.words.length || 'Pick a type or describe your idea',
   2: () => !!S.prio || 'Pick what matters most',
   3: () => S.hoods.length > 0 || 'Pick at least one neighborhood',
   4: () => true,
@@ -242,6 +242,7 @@ function renderTypes() {
   $('types').innerHTML = S.meta.types.map((t) => `<button class="choice" data-type="${t.key}" aria-pressed="${S.types.includes(t.key)}">${esc(t.label)}</button>`).join('');
 }
 function toggleType(k) {
+  S.custom = null; $('customNote').textContent = '';
   if (S.types.includes(k)) S.types = S.types.filter((x) => x !== k);
   else { S.types.push(k); if (S.types.length > 2) S.types.shift(); }
   afterTypes();
@@ -251,23 +252,23 @@ function afterTypes() {
   renderTypes(); renderPrios(); updateBar();
   $('customNote').textContent = S.types.length > 1 ? `Got it: ${typesOf().map((t) => t.label).join(' + ')}. We'll show city records for both.` : '';
 }
-function matchCustom() {
-  const q = $('custom').value.trim().toLowerCase();
-  if (!q) { $('customNote').textContent = ''; return; }
-  const pos = (words) => Math.min(...words.map((w) => { const i = q.indexOf(w); return i < 0 ? Infinity : i; }));
-  const hits = CUSTOM_MAP.map(([k, words]) => [k, pos(words)]).filter(([, i]) => i < Infinity).sort((a, b) => a[1] - b[1]).map(([k]) => k).slice(0, 2);
-  const dropped = CUSTOM_MAP.map(([k, words]) => [k, pos(words)]).filter(([, i]) => i < Infinity).sort((a, b) => a[1] - b[1]).slice(2).map(([k]) => S.meta.types.find((t) => t.key === k)?.label);
-  const extras = ['plant', 'flower', 'florist', 'nursery', 'craft', 'handicraft', 'gift', 'clothing', 'boutique', 'jewelry', 'gallery', 'yoga', 'gym', 'studio'].filter((w) => q.includes(w));
-  if (hits.length) {
-    S.types = hits; afterTypes();
-    $('customNote').innerHTML = `Got it. We'll look at city records for <b>${esc(typesOf().map((t) => t.label).join(' + '))}</b>.` +
-      (dropped.length ? ` We compare up to two types at a time, so ${esc(dropped.join(', '))} is left out; pick it on its own to compare it.` : '') +
-      (extras.length ? ` The ${esc(extras.join(', '))} part isn't covered by our city data yet.` : '');
-  } else {
-    $('customNote').textContent = `We don't have city data matched to "${q}" yet. Pick the closest type above to continue.`;
-  }
+async function matchCustom() {
+  const q = $('custom').value.trim();
+  if (!q) { S.custom = null; $('customNote').textContent = ''; updateBar(); return; }
+  $('customNote').textContent = 'Searching city business records…';
+  const r = await api('/api/guide/live', { text: q });
+  if (!r.words.length) { S.custom = null; $('customNote').textContent = 'Tell me a bit more, like "coffee shop with plants".'; updateBar(); return; }
+  S.custom = { text: q, words: r.words, food: r.food, live: r };
+  S.types = []; renderTypes();
+  if (S.prio === 'buildout' && !anyFood()) S.prio = null;
+  renderPrios(); renderCustom(); updateBar();
 }
-
+function renderCustom() {
+  const c = S.custom; if (!c) return;
+  const total = (w) => Object.values(w.counts || {}).reduce((a, b) => a + b, 0);
+  $('customNote').innerHTML = `We'll search city business records for your own words: ${c.words.map((w) => `<span class="chip public" style="font-size:13px">${esc(w)} <a href="#" data-dropword="${esc(w)}" style="text-decoration:none">✕</a></span>`).join(' ')}<br>` +
+    c.live.results.map((x) => x.ok ? `${total(x).toLocaleString()} active businesses with "${esc(x.word)}" in their name across our 11 neighborhoods` : `"${esc(x.word)}": city data couldn't be loaded`).join(' · ');
+}
 // Step 2
 function renderPrios() {
   if (!S.meta) return;
@@ -380,6 +381,7 @@ function takeaways(r) {
   return out;
 }
 async function runCompare() {
+  if (S.custom) return runCompareCustom();
   const results = await Promise.all(S.types.map((t) => api('/api/guide/compare', { type: t, keys: S.hoods }).then((x) => x.result)));
   const r = results[0];
   const multi = results.length > 1;
@@ -410,6 +412,24 @@ async function runCompare() {
       <div>DataSF city records${S.meta.evidence.retrievedAt ? `, retrieved ${esc(new Date(S.meta.evidence.retrievedAt).toLocaleDateString())}` : ''}. Areas use the city's official neighborhood boundaries (${esc(r.neighborhoods.map((n) => n.analysisNeighborhood).join(', '))}).</div>
       <div style="margin-top:6px">Raw queries: ${r.signalsUsed.map((s) => { const e = r.neighborhoods[0]?.evidence[s.key]; return e?.queryUrl ? `<a href="${esc(e.queryUrl)}" target="_blank" rel="noopener">${esc(s.label.toLowerCase())}</a>` : ''; }).filter(Boolean).join(' · ')}</div>
     </details>`;
+}
+
+async function runCompareCustom() {
+  const c = S.custom;
+  const food = c.food ? (await api('/api/guide/compare', { type: 'bakery', keys: S.hoods })).result : null;
+  $('cmpTitle').textContent = S.hoods.map(hoodName).join(' vs. ');
+  $('cmpLead').textContent = `Live city records for your own words: ${c.words.join(', ')}. Counts cover the whole neighborhood. More can mean proven demand or more competition.`;
+  $('compare').innerHTML = S.hoods.map((k, i) => `<div class="card"><h3>${esc(hoodName(k))}</h3>
+      ${food ? sentenceFor('food_permits', food.neighborhoods[i].evidence.food_permits, '') : ''}
+      ${c.live.results.map((x) => x.ok ? `<div class="fact"><b>${(x.counts[k] || 0).toLocaleString()}</b><span>active businesses with "${esc(x.word)}" in their name</span></div>` : `<div class="fact"><span class="unk">Unknown</span><span>"${esc(x.word)}": city data couldn't be loaded</span></div>`).join('')}
+    </div>`).join('') +
+    `<div class="card"><h3>What rent might look like</h3>
+      <div class="note" style="margin-top:0">From a published market report. Citywide only.</div>
+      <div class="row" style="margin-top:10px;align-items:flex-end"><div><label for="sqft">Space you need (sq ft)</label><input id="sqft" type="number" min="100" value="1200"></div><button class="ghost" id="rentGo" style="flex:0 0 auto">Estimate</button></div>
+      <div id="rentOut"></div></div>
+    <div class="callout"><b>Not known for any neighborhood:</b> rent for a specific space, foot traffic, which spaces are vacant today.</div>
+    <details><summary>Where these numbers come from</summary><div>Live search of DataSF Registered Business Locations (active businesses whose registered name contains each word), retrieved ${esc(new Date(c.live.retrievedAt).toLocaleString())}. Name matching misses businesses with other names.</div>
+    <div style="margin-top:6px">${c.live.results.map((x) => `<a href="${esc(x.queryUrl)}" target="_blank" rel="noopener">"${esc(x.word)}" query</a>`).join(' · ')}</div></details>`;
 }
 
 // Step 5
@@ -495,8 +515,10 @@ async function checkFunding() {
 async function renderChecklist() {
   const s = S.meta.sites.find((x) => x.id === S.site);
   $('nextLead').textContent = `For a ${nouns()}${s ? ` at ${s.name}` : ''}. Start with these five.`;
-  const all = await Promise.all(S.types.map((t) => api('/api/guide/checklist', { type: t, site_id: S.site }).then((x) => x.result)));
-  const c = { title: all[0].title.replace(typesOf()[0].label, typesOf().map((t) => t.label).join(' + ')), sections: [] };
+  const all = S.custom
+    ? [(await api('/api/guide/checklist', { type: 'custom', custom: { label: S.custom.words.join(' + '), food: S.custom.food }, site_id: S.site })).result]
+    : await Promise.all(S.types.map((t) => api('/api/guide/checklist', { type: t, site_id: S.site }).then((x) => x.result)));
+  const c = { title: S.custom ? all[0].title : all[0].title.replace(typesOf()[0].label, typesOf().map((t) => t.label).join(' + ')), sections: [] };
   for (const part of all) for (const sec of part.sections) {
     const ex = c.sections.find((x) => x.title.replace(/for a .*/, '') === sec.title.replace(/for a .*/, ''));
     if (!ex) c.sections.push({ ...sec, items: [...sec.items] });
@@ -525,7 +547,7 @@ document.addEventListener('click', async (e) => {
     if (b.id === 'next') go(S.step + 1);
     else if (b.id === 'back') go(S.step - 1);
     else if (b.dataset.type) toggleType(b.dataset.type);
-    else if (b.id === 'customGo') matchCustom();
+    else if (b.id === 'customGo') await matchCustom();
     else if (b.id === 'rentGo') {
       const r = await api('/api/market-rent', { sqft: $('sqft').value });
       const m = r.market;
@@ -538,8 +560,14 @@ document.addEventListener('click', async (e) => {
     }
     else if (b.dataset.prio) { S.prio = b.dataset.prio; renderPrios(); updateBar(); }
     else if (b.dataset.hood) toggleHood(b.dataset.hood);
+    else if (b.id === 'help' && S.custom && S.prio !== 'buildout') {
+      const sum = {}; for (const x of S.custom.live.results) for (const [k, v] of Object.entries(x.counts || {})) sum[k] = (sum[k] || 0) + v;
+      S.hoods = Object.entries(sum).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k); renderHoods();
+      $('helpRule').textContent = `Suggested by: most active businesses with "${S.custom.words.join('", "')}" in their name. A count from city records, not a ranking of where you'll succeed.`;
+    }
     else if (b.id === 'help') {
-      const { result: h } = await api('/api/guide/help', { type: S.type, priority: S.prio || 'similar' });
+      const { result: h } = await api('/api/guide/help', { type: S.type || 'bakery', priority: S.prio || 'similar' });
+      if (S.custom) h.rule = 'Sorted by building permits involving food use since 2016, highest first. One count from city records, not a ranking.';
       if (!h.picks.length) { $('helpRule').textContent = 'No city data loaded, so we can\'t suggest. Pick neighborhoods yourself.'; return; }
       S.hoods = h.picks; renderHoods();
       $('helpRule').textContent = `Suggested by: ${h.rule}`;
@@ -564,7 +592,7 @@ async function say(text) {
   const wait = document.createElement('div'); wait.className = 'msg ai'; wait.textContent = 'Checking city records and programs…'; $('chatLog').appendChild(wait);
   try {
     const site = S.meta?.sites.find((x) => x.id === S.site);
-    const context = { business_types: typesOf().map((t) => t.key), idea_text: $('custom').value.trim() || null, neighborhoods: S.hoods, storefront: site ? site.name : null, priority: S.prio };
+    const context = { business_types: typesOf().map((t) => t.key), idea_text: $('custom').value.trim() || null, idea_words: S.custom?.words || [], neighborhoods: S.hoods, storefront: site ? site.name : null, priority: S.prio };
     const r = await api('/api/chat', { history: CH, context });
     wait.remove(); CH.push({ role: 'assistant', content: r.reply }); addMsg('assistant', r.reply);
     $('chatOpts').innerHTML = (r.options || []).map((o) => `<button data-say="${esc(o)}">${esc(o)}</button>`).join('');
@@ -574,6 +602,13 @@ $('chatOpen').onclick = () => { $('chat').classList.add('on'); $('chatOpen').sty
 $('chatClose').onclick = () => { $('chat').classList.remove('on'); $('chatOpen').style.display = ''; };
 $('chatForm').onsubmit = (e) => { e.preventDefault(); say($('chatIn').value); };
 $('chatOpts').addEventListener('click', (e) => { const b = e.target.closest('button[data-say]'); if (b) { e.stopPropagation(); say(b.dataset.say); } });
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('[data-dropword]'); if (!a || !S.custom) return; e.preventDefault();
+  const words = S.custom.words.filter((w) => w !== a.dataset.dropword);
+  if (!words.length) { S.custom = null; $('customNote').textContent = ''; updateBar(); return; }
+  const r = await api('/api/guide/live', { words });
+  S.custom = { ...S.custom, words: r.words, food: r.food, live: r }; renderCustom(); renderPrios(); updateBar();
+});
 $('custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') matchCustom(); });
 
 (async () => {

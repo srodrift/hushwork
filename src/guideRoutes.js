@@ -2,6 +2,7 @@
 import express from 'express';
 import { readFileSync, existsSync } from 'node:fs';
 import { localHelpCard, draftRequest } from './localHelp.js';
+import { keywordsFrom, isFood, liveCounts } from './live.js';
 import { BUSINESS_TYPES, NEIGHBORHOODS, SIGNALS, RESOURCES, compare, helpMeChoose, checklist } from './guide.js';
 
 const EVIDENCE_PATH = process.env.HUSHWORK_EVIDENCE
@@ -43,7 +44,7 @@ router.post('/compare', wrap((req) => ({ result: compare({ evidence: readJson(EV
 router.post('/help', wrap((req) => ({ result: helpMeChoose({ evidence: readJson(EVIDENCE_PATH), typeKey: req.body?.type, priority: req.body?.priority }) })));
 router.post('/checklist', wrap((req) => {
   const site = sites().find((s) => s.id === req.body?.site_id) || null;
-  return { result: checklist({ typeKey: req.body?.type, site }), resources: RESOURCES };
+  return { result: checklist({ typeKey: req.body?.type, site, custom: req.body?.custom }), resources: RESOURCES };
 }));
 
 router.get('/local-help/:siteId', wrap((req) => {
@@ -52,5 +53,19 @@ router.get('/local-help/:siteId', wrap((req) => {
 }));
 // Draft only. Nothing is sent; no vault values are read.
 router.post('/local-help/draft', wrap((req) => ({ draft: draftRequest(req.body || {}) })));
+
+// Live search using the founder's own words (no category mapping). Cached 10 minutes.
+const liveCache = new Map();
+router.post('/live', async (req, res) => {
+  try {
+    const words = Array.isArray(req.body?.words) && req.body.words.length ? req.body.words.map((w) => String(w).toLowerCase().replace(/[^a-z]/g, '')).filter((w) => w.length >= 3).slice(0, 3) : keywordsFrom(req.body?.text);
+    if (!words.length) return res.json({ ok: true, words: [], food: false, results: [] });
+    const key = words.join(',');
+    const hit = liveCache.get(key);
+    const data = hit && Date.now() - hit.t < 600000 ? hit.data : await liveCounts(words);
+    liveCache.set(key, { t: Date.now(), data });
+    res.json({ ok: true, words, food: isFood(words), ...data });
+  } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+});
 
 export default router;
