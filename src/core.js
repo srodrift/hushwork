@@ -17,7 +17,7 @@ export const DEMO_PROFILE = Object.freeze({
   phone: '415-555-0142',
   home_address: '2291 Fake Ave, San Francisco, CA 94110',
   ssn: '900-12-3456', // synthetic, invalid range
-  credit_score: '742',
+  credit_score: 'credit score 742 (synthetic)',
   bank_balance: '$61,800',
   investment_budget: '$80,000',
   max_monthly_rent: '$7,500',
