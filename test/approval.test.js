@@ -31,7 +31,7 @@ test('draft: agent gets no values back; nothing is sent until approval', () => {
 
 test('consent card shows exact message, destination, included and excluded fields', () => {
   const { card } = setup();
-  assert.match(card.payload, /Maya Okafor/);
+  assert.match(card.payload, /Amina Malik/);
   assert.equal(card.destination, 'sim://outbox/mission_landlord');
   assert.deepEqual(card.includedFields.sort(), ['business_plan_summary', 'email', 'legal_name']);
   for (const f of ['ssn', 'max_monthly_rent', 'investment_budget', 'bank_balance']) assert.ok(card.excludedFields.includes(f), f);

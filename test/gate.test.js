@@ -39,8 +39,8 @@ test('1. authorized: granted fields to granted recipient+purpose are resolved an
   assert.equal(r.status, 'sent');
   assert.deepEqual(r.released.sort(), ['business_plan_summary', 'email', 'legal_name', 'phone']);
   const [msg] = v.outbox();
-  assert.match(msg.payload, /Maya Okafor/);
-  assert.match(msg.payload, /maya\.okafor@example\.com/);
+  assert.match(msg.payload, /Amina Malik/);
+  assert.match(msg.payload, /amina\.malik@example\.com/);
   assert.doesNotMatch(msg.payload, /\{\{/);
   assertNoSecretsIn(v, 'agent-facing result', r);
 });

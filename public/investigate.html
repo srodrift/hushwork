@@ -160,12 +160,15 @@ function renderReport(r) {
     <div class="row" style="align-items:flex-start;gap:18px">
       <div style="flex:2">
         ${rep ? `
-        <label>Findings <span class="chip public">from public records</span></label>
-        <ul>${(rep.findings || []).map((f) => `<li>${esc(f.text)} ${f.source ? `<a href="${esc(f.source.queryUrl)}" target="_blank" rel="noopener" class="mono">[${esc(f.ref)}]</a>` : `<small class="mono">[${esc(f.ref)}]</small>`}</li>`).join('')}</ul>
+        <label>Key findings <span class="chip public">from public records</span></label>
+        <ul>${(rep.findings || []).slice(0, 3).map((f) => `<li>${esc(f.text)} ${f.source ? `<a href="${esc(f.source.queryUrl)}" target="_blank" rel="noopener" class="mono">[${esc(f.ref)}]</a>` : `<small class="mono">[${esc(f.ref)}]</small>`}</li>`).join('')}</ul>
+        ${(rep.findings || []).length > 3 ? `<details><summary>${rep.findings.length - 3} more findings</summary><ul>${rep.findings.slice(3).map((f) => `<li>${esc(f.text)}</li>`).join('')}</ul></details>` : ''}
+        <details><summary>Risks, unknowns and the full report</summary>
         <label>Risks and questions</label><ul>${(rep.risks || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
         <label>Still unknown</label><ul>${(rep.unknowns || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
         <label>Recommended next step</label><p style="margin:4px 0">${esc(rep.next_step)}</p>
         ${rep.notes_on_listing ? `<label>Notes on the listing</label><p style="margin:4px 0">${esc(rep.notes_on_listing)}</p>` : ''}
+        </details>
         ` : `<div class="empty">The model did not submit a structured report.</div><div class="msg">${esc(r.modelText)}</div>`}
       </div>
       <div style="flex:1">

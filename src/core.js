@@ -12,8 +12,8 @@ import { PROGRAMS, evalCriterion, summarize, CHECKED_ON } from './funding.js';
 const TOKEN_RE = /\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi;
 
 export const DEMO_PROFILE = Object.freeze({
-  legal_name: 'Maya Okafor',
-  email: 'maya.okafor@example.com',
+  legal_name: 'Amina Malik',
+  email: 'amina.malik@example.com',
   phone: '415-555-0142',
   home_address: '2291 Fake Ave, San Francisco, CA 94110',
   ssn: '900-12-3456', // synthetic, invalid range
