@@ -64,7 +64,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
 
   <section class="step" data-step="1">
     <h1>What do you want to open?</h1>
-    <p class="lead">For people already living in the U.S. starting a business in San Francisco. Your answer decides which city records we look at.</p>
+    <p class="lead">For people already living in the U.S. starting a business in San Francisco. Pick one or two, or describe a mix. Your answer decides which city records we look at.</p>
     <div class="choices" id="types"></div>
     <div style="margin-top:20px">
       <label for="custom">Something else?</label>
@@ -152,14 +152,17 @@ async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json(); if (!r.ok || j.ok === false) throw new Error(j.error || r.statusText); return j;
 }
-const S = { meta: null, step: 1, type: null, prio: null, hoods: [], site: null, map: null, bounds: null, checklist: null };
+const S = { meta: null, step: 1, types: [], get type() { return this.types[0] || null; }, prio: null, hoods: [], site: null, map: null, bounds: null, checklist: null };
 const TOTAL = 7;
 const hoodName = (k) => S.meta.neighborhoods.find((n) => n.key === k)?.name || k;
 const typeOf = () => S.meta.types.find((t) => t.key === S.type);
 const noun = () => (typeOf()?.label || 'business').toLowerCase();
+const typesOf = () => S.types.map((k) => S.meta.types.find((t) => t.key === k)).filter(Boolean);
+const anyFood = () => typesOf().some((t) => t.food);
+const nouns = () => typesOf().map((t) => t.label.toLowerCase()).join(' + ') || 'business';
 
 const canContinue = {
-  1: () => !!S.type || 'Pick what you want to open',
+  1: () => S.types.length > 0 || 'Pick what you want to open',
   2: () => !!S.prio || 'Pick what matters most',
   3: () => S.hoods.length > 0 || 'Pick at least one neighborhood',
   4: () => true,
@@ -198,16 +201,25 @@ const CUSTOM_MAP = [
   ['bookstore', ['book', 'stationery', 'comic']],
 ];
 function renderTypes() {
-  $('types').innerHTML = S.meta.types.map((t) => `<button class="choice" data-type="${t.key}" aria-pressed="${S.type === t.key}">${esc(t.label)}</button>`).join('');
+  $('types').innerHTML = S.meta.types.map((t) => `<button class="choice" data-type="${t.key}" aria-pressed="${S.types.includes(t.key)}">${esc(t.label)}</button>`).join('');
 }
-function setType(k) { S.type = k; if (S.prio === 'buildout' && !typeOf().food) S.prio = null; renderTypes(); renderPrios(); updateBar(); }
+function toggleType(k) {
+  if (S.types.includes(k)) S.types = S.types.filter((x) => x !== k);
+  else { S.types.push(k); if (S.types.length > 2) S.types.shift(); }
+  afterTypes();
+}
+function afterTypes() {
+  if (S.prio === 'buildout' && !anyFood()) S.prio = null;
+  renderTypes(); renderPrios(); updateBar();
+  $('customNote').textContent = S.types.length > 1 ? `Got it: ${typesOf().map((t) => t.label).join(' + ')}. We'll show city records for both.` : '';
+}
 function matchCustom() {
   const q = $('custom').value.trim().toLowerCase();
   if (!q) { $('customNote').textContent = 'Type an idea first.'; return; }
-  const hit = CUSTOM_MAP.find(([, words]) => words.some((w) => q.includes(w)));
-  if (hit) {
-    setType(hit[0]);
-    $('customNote').innerHTML = `Closest type we have city data for: <b>${esc(typeOf().label)}</b>. We'll compare using ${esc(typeOf().label.toLowerCase())} records, not "${esc(q)}" specifically.`;
+  const hits = CUSTOM_MAP.filter(([, words]) => words.some((w) => q.includes(w))).map(([k]) => k).slice(0, 2);
+  if (hits.length) {
+    S.types = hits; afterTypes();
+    $('customNote').innerHTML = `Got it. We'll look at city records for <b>${esc(typesOf().map((t) => t.label).join(' + '))}</b>${hits.length > 1 ? ', both parts of your idea' : ''}.`;
   } else {
     $('customNote').textContent = `We don't have city data matched to "${q}" yet. Pick the closest type above to continue.`;
   }
@@ -216,7 +228,7 @@ function matchCustom() {
 // Step 2
 function renderPrios() {
   if (!S.meta) return;
-  const food = typeOf()?.food;
+  const food = anyFood();
   const opts = [
     ['buildout', 'A space that already had a kitchen', 'Uses building permits for food use. Can save buildout cost if equipment remains.', !food],
     ['similar', 'Proof that people buy this here', 'Uses how many similar businesses are registered and active.', false],
@@ -291,8 +303,8 @@ function updateMap() {
 }
 
 // Step 4
-function sentence(key, ev) {
-  const n = noun();
+function sentence(key, ev) { return sentenceFor(key, ev, noun()); }
+function sentenceFor(key, ev, n) {
   const text = {
     similar_active: `active businesses registered with ${n}-type names`,
     food_permits: 'building permits involving food use since 2016 (spaces that may have had kitchens)',
@@ -320,15 +332,25 @@ function takeaways(r) {
   return out;
 }
 async function runCompare() {
-  const { result: r } = await api('/api/guide/compare', { type: S.type, keys: S.hoods });
-  $('cmpTitle').textContent = r.neighborhoods.length === 1 ? `${r.neighborhoods[0].name} for a ${noun()}` : r.neighborhoods.map((n) => n.name).join(' vs. ');
-  $('cmpLead').textContent = `What city records say about each area for a ${noun()}. Counts cover the whole neighborhood. Bigger isn't automatically better.`;
+  const results = await Promise.all(S.types.map((t) => api('/api/guide/compare', { type: t, keys: S.hoods }).then((x) => x.result)));
+  const r = results[0];
+  const multi = results.length > 1;
+  $('cmpTitle').textContent = r.neighborhoods.length === 1 ? `${r.neighborhoods[0].name} for a ${nouns()}` : r.neighborhoods.map((n) => n.name).join(' vs. ');
+  $('cmpLead').textContent = `What city records say about each area for a ${nouns()}. Counts cover the whole neighborhood. Bigger isn't automatically better.`;
   const t = takeaways(r);
-  $('compare').innerHTML = r.neighborhoods.map((n) => `<div class="card">
+  const block = (res, n) => {
+    const label = res.type.label;
+    const facts = res.signalsUsed.filter((s) => s.key !== 'food_permits').map((s) => sentenceFor(s.key, n.evidence[s.key], label.toLowerCase())).join('');
+    return multi ? `<div class="note" style="margin:12px 0 0;font-weight:600;color:var(--ink)">${esc(label)}</div>${facts}` : facts;
+  };
+  $('compare').innerHTML = r.neighborhoods.map((n, i) => {
+    const food = results.map((res) => res.neighborhoods[i].evidence.food_permits).find((e) => e);
+    return `<div class="card">
       <h3>${esc(n.name)}</h3>
-      ${r.signalsUsed.map((s) => sentence(s.key, n.evidence[s.key])).join('')}
+      ${food ? sentenceFor('food_permits', food, '') : ''}
+      ${results.map((res) => block(res, res.neighborhoods[i])).join('')}
       ${(t[n.key] || []).map((x) => `<div class="take">${esc(x)}</div>`).join('')}
-    </div>`).join('') +
+    </div>`; }).join('') +
     `<div class="card"><h3>What rent might look like</h3>
       <div class="note" style="margin-top:0">From a published market report. Citywide only: no source we found breaks it down by neighborhood.</div>
       <div class="row" style="margin-top:10px;align-items:flex-end"><div><label for="sqft">Space you need (sq ft)</label><input id="sqft" type="number" min="100" value="1200"></div><button class="ghost" id="rentGo" style="flex:0 0 auto">Estimate</button></div>
@@ -386,7 +408,7 @@ async function checkFunding() {
   const site = S.meta.sites.find((x) => x.id === S.site);
   for (const [field, id] of [['years_operating', 'fYears'], ['annual_revenue', 'fRevenue'], ['lease_status', 'fLease']]) await api('/api/profile', { field, value: $(id).value });
   const dining = pressed('[data-dining]')[0]?.dataset.dining === 'true';
-  const [{ programs }, { results }] = await Promise.all([api('/api/funding/programs'), api('/api/funding/check', { public: { corridor: site?.corridor, on_site_dining: dining, food: !!typeOf()?.food } })]);
+  const [{ programs }, { results }] = await Promise.all([api('/api/funding/programs'), api('/api/funding/check', { public: { corridor: site?.corridor, on_site_dining: dining, food: anyFood() } })]);
   const byId = Object.fromEntries(programs.map((p) => [p.id, p]));
   const rows = results.map((r) => ({ r, p: byId[r.programId] }));
   const notNow = (x) => x.r.match === 'likely_not_eligible' || x.p.status === 'closed' || x.p.status === 'unclear';
@@ -421,8 +443,14 @@ async function checkFunding() {
 // Step 7
 async function renderChecklist() {
   const s = S.meta.sites.find((x) => x.id === S.site);
-  $('nextLead').textContent = `For a ${noun()}${s ? ` at ${s.name}` : ''}. Tick things off as you go.`;
-  const { result: c } = await api('/api/guide/checklist', { type: S.type, site_id: S.site });
+  $('nextLead').textContent = `For a ${nouns()}${s ? ` at ${s.name}` : ''}. Tick things off as you go.`;
+  const all = await Promise.all(S.types.map((t) => api('/api/guide/checklist', { type: t, site_id: S.site }).then((x) => x.result)));
+  const c = { title: all[0].title.replace(typesOf()[0].label, typesOf().map((t) => t.label).join(' + ')), sections: [] };
+  for (const part of all) for (const sec of part.sections) {
+    const ex = c.sections.find((x) => x.title.replace(/for a .*/, '') === sec.title.replace(/for a .*/, ''));
+    if (!ex) c.sections.push({ ...sec, items: [...sec.items] });
+    else { if (ex.title !== sec.title) ex.title = ex.title.replace(/for a .*/, `for a ${nouns()}`); for (const it of sec.items) if (!ex.items.some((y) => y.text === it.text)) ex.items.push(it); }
+  }
   S.checklist = c;
   $('checklist').innerHTML = c.sections.map((sec, i) => `<details ${i === 0 ? 'open' : ''} class="card" style="padding:16px 20px;margin-top:0"><summary style="color:var(--ink);font-weight:600;font-size:17px">${esc(sec.title)} <span class="note">(${sec.items.length})</span></summary>
     ${sec.note ? `<div class="callout">${esc(sec.note)}</div>` : ''}
@@ -435,7 +463,7 @@ document.addEventListener('click', async (e) => {
   try {
     if (b.id === 'next') go(S.step + 1);
     else if (b.id === 'back') go(S.step - 1);
-    else if (b.dataset.type) { setType(b.dataset.type); $('customNote').textContent = ''; }
+    else if (b.dataset.type) toggleType(b.dataset.type);
     else if (b.id === 'customGo') matchCustom();
     else if (b.id === 'rentGo') {
       const r = await api('/api/market-rent', { sqft: $('sqft').value });
