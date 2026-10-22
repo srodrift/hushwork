@@ -88,7 +88,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
         <div class="choices" id="types"></div>
         <div style="margin-top:20px">
           <label for="custom">Or describe your idea in your own words</label>
-          <div class="row"><input id="custom" placeholder="e.g., croissant shop, momo counter, nail studio"><button class="ghost" id="customGo" style="flex:0 0 auto">Use my idea</button></div>
+          <div class="row"><input id="custom" placeholder="e.g., croissant shop, momo counter, nail studio"><button id="customGo" style="flex:0 0 auto">Use my idea →</button></div>
           <div class="note" id="customNote"></div>
         </div>
         <div class="note" style="margin-top:18px">55 storefront addresses across 11 neighborhoods. Saw one on a walk? You'll pick neighborhoods in step 3, or tap <b>Ask Hushwork</b> to talk it through.</div>
@@ -112,6 +112,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
   <section class="step" data-step="3">
     <h1>Where should you look?</h1>
     <p class="lead">Pick 1 to 3 neighborhoods to compare side by side, or let us suggest some.</p>
+    <div class="note" id="ideaRecap" style="margin:-12px 0 14px"></div>
     <button id="help">Suggest neighborhoods for me</button>
     <div class="note" id="helpRule"></div>
     <div class="choices" id="hoods" style="margin-top:16px"></div>
@@ -188,7 +189,7 @@ async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json(); if (!r.ok || j.ok === false) throw new Error(j.error || r.statusText); return j;
 }
-const S = { meta: null, step: 1, custom: null, types: [], get type() { return this.types[0] || null; }, prio: null, hoods: [], site: null, map: null, bounds: null, checklist: null };
+const S = { meta: null, step: 1, prio: 'similar', custom: null, types: [], get type() { return this.types[0] || null; }, prio: null, hoods: [], site: null, map: null, bounds: null, checklist: null };
 const TOTAL = 7;
 const hoodName = (k) => S.meta.neighborhoods.find((n) => n.key === k)?.name || k;
 const typeOf = () => S.meta.types.find((t) => t.key === S.type);
@@ -199,7 +200,7 @@ const nouns = () => S.custom?.words.length ? S.custom.words.join(' + ') : (types
 
 const canContinue = {
   1: () => S.types.length > 0 || !!S.custom?.words.length || 'Pick a type or describe your idea',
-  2: () => !!S.prio || 'Pick what matters most',
+  2: () => true,
   3: () => S.hoods.length > 0 || 'Pick at least one neighborhood',
   4: () => true,
   5: () => !!S.site || 'Pick a storefront',
@@ -207,14 +208,17 @@ const canContinue = {
   7: () => true,
 };
 function go(n) {
+  if (n === 2) n = S.step < 2 ? 3 : 1; // step 2 (priorities) removed from the flow
   S.step = Math.max(1, Math.min(TOTAL, n));
   document.querySelectorAll('.step').forEach((s) => s.classList.toggle('on', Number(s.dataset.step) === S.step));
-  $('progress').innerHTML = Array.from({ length: TOTAL }, (_, i) => `<span class="${i < S.step ? 'on' : ''}"></span>`).join('');
-  $('stepno').textContent = S.step === 1 ? '' : `Step ${S.step} of ${TOTAL}`;
+  const shown = S.step > 2 ? S.step - 1 : S.step;
+  $('progress').innerHTML = Array.from({ length: TOTAL - 1 }, (_, i) => `<span class="${i < shown ? 'on' : ''}"></span>`).join('');
+  $('stepno').textContent = S.step === 1 ? '' : `Step ${shown} of ${TOTAL - 1}`;
   $('progress').style.visibility = S.step === 1 ? 'hidden' : 'visible';
   window.scrollTo(0, 0);
   const slot = document.querySelector(`.step.on .mapslot`);
   if (slot) { slot.appendChild($('map')); if (!S.map) initMap(); else S.map.resize(); }
+  if (S.step === 3) $('ideaRecap').innerHTML = S.custom ? `Your idea: ${S.custom.words.map((w) => `<b>${esc(w)}</b>`).join(' + ')}. <a href="#" id="editIdea">Edit</a>` : (S.types.length ? `Your idea: <b>${esc(nouns())}</b>. <a href="#" id="editIdea">Edit</a>` : '');
   if (S.step === 4) runCompare().catch(showErr);
   if (S.step === 5) renderSites();
   if (S.step === 7) renderChecklist().catch(showErr);
@@ -262,6 +266,7 @@ async function matchCustom() {
   S.types = []; renderTypes();
   if (S.prio === 'buildout' && !anyFood()) S.prio = null;
   renderPrios(); renderCustom(); updateBar();
+  go(3);
 }
 function renderCustom() {
   const c = S.custom; if (!c) return;
@@ -609,6 +614,7 @@ document.addEventListener('click', async (e) => {
   const r = await api('/api/guide/live', { words });
   S.custom = { ...S.custom, words: r.words, food: r.food, live: r }; renderCustom(); renderPrios(); updateBar();
 });
+document.addEventListener('click', (e) => { if (e.target.id === 'editIdea') { e.preventDefault(); go(1); } });
 $('custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') matchCustom(); });
 
 (async () => {
