@@ -1,0 +1,13 @@
+{
+ "retrievedAt": "2026-10-22T20:00:00.000Z",
+ "_note": "FAKE numbers for tests only. Never shipped as data.",
+ "shared": { "food_permits": { "ok": true, "queryUrl": "https://example/fp", "counts": { "Mission": 40, "Excelsior": 12, "Sunset/Parkside": 20, "Tenderloin": 30 } } },
+ "types": {
+  "bakery": { "signals": {
+    "similar_active": { "ok": true, "queryUrl": "https://example/b", "counts": { "Mission": 9, "Excelsior": 4, "Sunset/Parkside": 7 } },
+    "sector_openings": { "ok": true, "queryUrl": "https://example/o", "counts": { "Mission": 50, "Excelsior": 10 } },
+    "sector_closures": { "ok": false, "queryUrl": "https://example/c", "error": "500" } } },
+  "bookstore": { "signals": {
+    "similar_active": { "ok": true, "queryUrl": "https://example/bk", "counts": { "Mission": 3, "Inner Richmond": 5 } } } }
+ }
+}

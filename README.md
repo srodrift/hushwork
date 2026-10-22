@@ -14,6 +14,22 @@ This repository was created on October 22, 2026, with a fresh Git history. It is
 - **Built during the hackathon (Oct 22, 2026):** everything in `src/`, `public/`, `test/`, and `scripts/`. That includes the vault, egress gate, payload-bound approvals, audit log, coarse budget check, Claude agent and tools, attack test, API, UI, and all tests. This code was first written in a `veyra` branch of the Block Book repo earlier today, then moved here as a standalone app.
 - **Design:** inspired by Apple's design principles (system typography, generous whitespace, soft cards). It uses no Apple branding or assets.
 
+## The guided journey
+
+Open `http://localhost:3000`. For people already living in the U.S. who want to open a business in San Francisco:
+
+1. **Business type.** Bakery, chai shop, restaurant, grocery, salon, bookstore. The type changes which public records are compared (a bakery counts food-use permits; a bookstore doesn't).
+2. **Priorities.** Private budget goes to the vault. Buildout, similar businesses, recent activity, transit (transit is shown as unknown).
+3. **Compare three neighborhoods.** Pick on the map, search, or "Help me choose" (a transparent sort on one signal, not a ranking). Each count links to its DataSF query.
+4. **Storefronts** on the list in those neighborhoods, with what to verify. 2234 Mission Street has pulled city records and the private AI investigation (`/investigate.html`).
+5. **Checklist:** public records, owner questions, permitted use and licenses, buildout, and questions for a qualified immigration adviser with official resources.
+
+Neighborhood counts come from `npm run neighborhoods` (writes `data/neighborhood_evidence.json`). Without it, every count shows as unknown.
+
+**Not built (shown as planned in the app):** custom ideas with live queries, community perspectives (no Reddit feed is connected), private investigation for storefronts other than 2234 Mission, rent/foot-traffic/vacancy/transit data.
+
+**About the storefront list:** `data/sites.json` keeps only addresses, coordinates and neighborhood groupings from Block Book. Block Book's vacancy status, condition notes, walk/transit scores and confidence numbers are excluded because they are not sourced.
+
 ## Run it
 
 ```bash
