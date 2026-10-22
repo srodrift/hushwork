@@ -220,9 +220,11 @@ function matchCustom() {
   const q = $('custom').value.trim().toLowerCase();
   if (!q) { $('customNote').textContent = 'Type an idea first.'; return; }
   const hits = CUSTOM_MAP.filter(([, words]) => words.some((w) => q.includes(w))).map(([k]) => k).slice(0, 2);
+  const extras = ['craft', 'handicraft', 'art', 'gift', 'clothing', 'boutique', 'jewelry', 'gallery'].filter((w) => q.includes(w));
   if (hits.length) {
     S.types = hits; afterTypes();
-    $('customNote').innerHTML = `Got it. We'll look at city records for <b>${esc(typesOf().map((t) => t.label).join(' + '))}</b>${hits.length > 1 ? ', both parts of your idea' : ''}.`;
+    $('customNote').innerHTML = `Got it. We'll look at city records for <b>${esc(typesOf().map((t) => t.label).join(' + '))}</b>.` +
+      (extras.length ? ` The ${esc(extras[0])} part isn't covered by our city data yet, so it won't show in the comparison.` : '');
   } else {
     $('customNote').textContent = `We don't have city data matched to "${q}" yet. Pick the closest type above to continue.`;
   }
@@ -415,6 +417,9 @@ async function checkFunding() {
   const byId = Object.fromEntries(programs.map((p) => [p.id, p]));
   const rows = results.map((r) => ({ r, p: byId[r.programId] }));
   const notNow = (x) => x.r.match === 'likely_not_eligible' || x.p.status === 'closed' || x.p.status === 'unclear';
+  const ORDER = ['la_cocina', 'kiva', 'working_solutions', 'sfsbdc', 'vacant_to_vibrant', 'accessible_barrier', 'dishwashing'];
+  const rank = (x) => { const i = ORDER.indexOf(x.p.id); return i < 0 ? 99 : i; };
+  rows.sort((a, b) => rank(a) - rank(b));
   const fit = rows.filter((x) => !notNow(x) && x.r.match === 'may_be_eligible');
   const more = rows.filter((x) => !notNow(x) && x.r.match !== 'may_be_eligible');
   const no = rows.filter(notNow);
@@ -446,7 +451,7 @@ async function checkFunding() {
 // Step 7
 async function renderChecklist() {
   const s = S.meta.sites.find((x) => x.id === S.site);
-  $('nextLead').textContent = `For a ${nouns()}${s ? ` at ${s.name}` : ''}. Tick things off as you go.`;
+  $('nextLead').textContent = `For a ${nouns()}${s ? ` at ${s.name}` : ''}. Start with these five.`;
   const all = await Promise.all(S.types.map((t) => api('/api/guide/checklist', { type: t, site_id: S.site }).then((x) => x.result)));
   const c = { title: all[0].title.replace(typesOf()[0].label, typesOf().map((t) => t.label).join(' + ')), sections: [] };
   for (const part of all) for (const sec of part.sections) {
@@ -455,9 +460,19 @@ async function renderChecklist() {
     else { if (ex.title !== sec.title) ex.title = ex.title.replace(/for a .*/, `for a ${nouns()}`); for (const it of sec.items) if (!ex.items.some((y) => y.text === it.text)) ex.items.push(it); }
   }
   S.checklist = c;
-  $('checklist').innerHTML = c.sections.map((sec, i) => `<details ${i === 0 ? 'open' : ''} class="card" style="padding:16px 20px;margin-top:0"><summary style="color:var(--ink);font-weight:600;font-size:17px">${esc(sec.title)} <span class="note">(${sec.items.length})</span></summary>
+  const sec = (t) => c.sections.find((x) => x.title.startsWith(t))?.items || [];
+  const find = (t, re) => sec(t).find((x) => re.test(x.text));
+  const fixTop = [
+    find('Public records', /Property Information Map/),
+    find('Public records', /last legally permitted use/),
+    find('Questions for the owner', /available now/),
+    anyFood() ? find('Permitted use', /food facility/) : find('Questions for the owner', /asking rent/),
+    find('Questions for a qualified', /legal help/),
+  ].filter(Boolean);
+  $('checklist').innerHTML = `<div class="card"><h3>Your 5 next steps</h3><ol style="padding-left:20px;margin:8px 0 0">${fixTop.map((it) => `<li style="margin:8px 0">${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''}</li>`).join('')}</ol></div>
+    <details><summary>Full checklist (${c.sections.reduce((n, x) => n + x.items.length, 0)} items)</summary><div style="margin-top:10px">` + c.sections.map((sec) => `<details class="card" style="padding:16px 20px;margin-top:0"><summary style="color:var(--ink);font-weight:600;font-size:17px">${esc(sec.title)} <span class="note">(${sec.items.length})</span></summary>
     ${sec.note ? `<div class="callout">${esc(sec.note)}</div>` : ''}
-    <ul class="check" style="margin-top:8px">${sec.items.map((it) => `<li><input type="checkbox"><span>${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''}</span></li>`).join('')}</ul></details>`).join('');
+    <ul class="check" style="margin-top:8px">${sec.items.map((it) => `<li><input type="checkbox"><span>${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''}</span></li>`).join('')}</ul></details>`).join('') + `</div></details>`;
 }
 
 // Events
