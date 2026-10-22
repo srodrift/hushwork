@@ -311,35 +311,59 @@ function toggleHood(k) {
   if (cur && !S.hoods.includes(cur.corridor)) S.site = null;
   renderHoods();
 }
+const STYLES = {
+  day: { url: 'https://tiles.openfreemap.org/styles/liberty', building: '#e4e0d8' },
+  night: { url: 'https://tiles.openfreemap.org/styles/fiord', building: '#3a4a5c' },
+  aerial: { url: { version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', sources: { sat: { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Imagery © Esri' } }, layers: [{ id: 'sat', type: 'raster', source: 'sat' }] }, building: null },
+};
+S.mapStyle = 'day';
+function addOverlays(map) {
+  try {
+    const b = STYLES[S.mapStyle].building;
+    const src = Object.keys(map.getStyle().sources).find((k) => map.getStyle().sources[k].type === 'vector');
+    if (b && src && !map.getLayer('buildings-3d')) map.addLayer({ id: 'buildings-3d', type: 'fill-extrusion', source: src, 'source-layer': 'building', minzoom: 13,
+      paint: { 'fill-extrusion-color': b, 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 0], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.8 } });
+  } catch {}
+  if (!map.getSource('sites')) map.addSource('sites', { type: 'geojson', data: geo() });
+  if (!map.getLayer('sites')) map.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: {
+    'circle-radius': ['case', ['get', 'chosen'], 6, 4],
+    'circle-color': ['case', ['get', 'chosen'], '#c0362c', '#8e8e93'],
+    'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } });
+  if (S.bounds) addHoodLayers(map); else if (S.boundsTried) addAreaCircles(map);
+}
 function initMap() {
   if (!window.maplibregl) { $('map').innerHTML = '<div class="empty" style="padding:20px">The map could not load. Use the neighborhood buttons above.</div>'; return; }
-  const map = new maplibregl.Map({ container: 'map', style: 'https://tiles.openfreemap.org/styles/positron', center: [-122.435, 37.757], zoom: 11.6, pitch: 50, bearing: -15, attributionControl: { compact: true }, fadeDuration: 0 });
+  const map = new maplibregl.Map({ container: 'map', style: STYLES.day.url, center: [-122.435, 37.757], zoom: 11.6, pitch: 50, bearing: -15, attributionControl: { compact: true }, fadeDuration: 0 });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   map.on('error', () => {});
+  map.on('style.load', () => addOverlays(map));
   map.on('load', () => {
-    try { // 3D buildings from the base map's own building data (visible when zoomed in)
-      const src = Object.keys(map.getStyle().sources).find((k) => map.getStyle().sources[k].type === 'vector');
-      if (src) map.addLayer({ id: 'buildings-3d', type: 'fill-extrusion', source: src, 'source-layer': 'building', minzoom: 13,
-        paint: { 'fill-extrusion-color': '#d5d9df', 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 0], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.75 } });
-    } catch {}
-    map.addSource('sites', { type: 'geojson', data: geo() });
-    map.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: {
-      'circle-radius': ['case', ['get', 'chosen'], 6, 4],
-      'circle-color': ['case', ['get', 'chosen'], '#c0362c', '#8e8e93'],
-      'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } });
     map.on('click', 'sites', (e) => {
       const s = S.meta.sites.find((x) => x.id === e.features[0].properties.id);
       new maplibregl.Popup({ closeButton: false }).setLngLat([s.lng, s.lat]).setHTML(`<b>${esc(s.name)}</b><br>${esc(hoodName(s.corridor))}<br><span style="color:#6e6e73">Vacancy not verified</span>`).addTo(map);
     });
-    loadBoundaries(map).then(() => { if (!S.bounds) addAreaCircles(map); });
-    map.on('click', 'areas', (e) => { if (!map.queryRenderedFeatures(e.point, { layers: ['sites'] }).length) toggleHood(e.features[0].properties.key); });
-    map.on('mouseenter', 'areas', () => map.getCanvas().style.cursor = 'pointer');
-    map.on('mouseleave', 'areas', () => map.getCanvas().style.cursor = '');
+    for (const id of ['hood-fill', 'areas']) {
+      map.on('click', id, (e) => {
+        if (map.queryRenderedFeatures(e.point, { layers: ['sites'] }).length) return;
+        const k = e.features[0].properties.key;
+        if (k) toggleHood(k); else new maplibregl.Popup({ closeButton: false }).setLngLat(e.lngLat).setHTML(`<b>${esc(e.features[0].properties.name)}</b><br><span style="color:#6e6e73">Not in our list yet</span>`).addTo(map);
+      });
+      map.on('mouseenter', id, () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', id, () => map.getCanvas().style.cursor = '');
+    }
+    loadBoundaries(map);
   });
-  const tg = document.createElement('button'); tg.className = 'ghost small'; tg.textContent = '2D'; tg.id = 'dimToggle';
-  tg.style.cssText = 'position:absolute;left:10px;top:10px;z-index:2;background:var(--card)';
-  tg.onclick = (e) => { e.stopPropagation(); const flat = map.getPitch() > 5; map.jumpTo({ pitch: flat ? 0 : 50, bearing: flat ? 0 : -15 }); tg.textContent = flat ? '3D' : '2D'; };
-  $('map').appendChild(tg);
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:absolute;left:10px;top:10px;z-index:2;display:flex;gap:6px';
+  bar.innerHTML = `<button class="ghost small" data-mapdim style="background:var(--card)">2D</button>` + ['day', 'night', 'aerial'].map((k) => `<button class="${k === 'day' ? '' : 'ghost '}small" data-mapstyle="${k}" style="${k === 'day' ? '' : 'background:var(--card)'}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('');
+  bar.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
+    if (b.dataset.mapdim !== undefined) { const flat = map.getPitch() > 5; map.jumpTo({ pitch: flat ? 0 : 50, bearing: flat ? 0 : -15 }); b.textContent = flat ? '3D' : '2D'; return; }
+    S.mapStyle = b.dataset.mapstyle;
+    bar.querySelectorAll('[data-mapstyle]').forEach((x) => { const on = x === b; x.className = (on ? '' : 'ghost ') + 'small'; x.style.background = on ? '' : 'var(--card)'; });
+    map.setStyle(STYLES[S.mapStyle].url);
+  });
+  $('map').appendChild(bar);
   S.map = map;
 }
 async function loadBoundaries(map) {
@@ -350,21 +374,15 @@ async function loadBoundaries(map) {
     const gj = await r.json();
     gj.features = (gj.features || []).map((f) => { const name = f.properties?.nhood || f.properties?.name || ''; return { ...f, properties: { name, key: byAnalysis[name] || '' } }; }).filter((f) => f.properties.name);
     if (!gj.features.length) throw new Error('empty');
-    S.bounds = gj;
-    map.addSource('hoods', { type: 'geojson', data: boundsData() });
-    map.addLayer({ id: 'hood-fill', type: 'fill', source: 'hoods', paint: {
-      'fill-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'],
-      'fill-opacity': ['case', ['get', 'chosen'], 0.3, ['==', ['get', 'key'], ''], 0.02, 0.07] } }, 'sites');
-    map.addLayer({ id: 'hood-line', type: 'line', source: 'hoods', paint: { 'line-color': '#1d1d1f', 'line-opacity': 0.3, 'line-width': ['case', ['get', 'chosen'], 2, 0.6] } }, 'sites');
-    map.on('click', 'hood-fill', (e) => {
-      if (map.queryRenderedFeatures(e.point, { layers: ['sites'] }).length) return;
-      const f = e.features[0];
-      if (f.properties.key) toggleHood(f.properties.key);
-      else new maplibregl.Popup({ closeButton: false }).setLngLat(e.lngLat).setHTML(`<b>${esc(f.properties.name)}</b><br><span style="color:#6e6e73">Not in our list yet</span>`).addTo(map);
-    });
-    map.on('mousemove', 'hood-fill', (e) => { map.getCanvas().style.cursor = e.features[0].properties.key ? 'pointer' : ''; });
-    map.on('mouseleave', 'hood-fill', () => { map.getCanvas().style.cursor = ''; });
-  } catch { $('mapNote').textContent = 'Neighborhood outlines could not load, so use the buttons above. Dots are storefront addresses on our list, not confirmed vacancies.'; }
+    S.bounds = gj; addHoodLayers(map);
+  } catch { S.boundsTried = true; addAreaCircles(map); }
+}
+function addHoodLayers(map) {
+  if (map.getSource('hoods')) return;
+  map.addSource('hoods', { type: 'geojson', data: boundsData() });
+  map.addLayer({ id: 'hood-fill', type: 'fill', source: 'hoods', paint: { 'fill-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'], 'fill-opacity': ['case', ['get', 'chosen'], 0.3, ['==', ['get', 'key'], ''], 0.02, 0.07] } }, 'sites');
+  map.addLayer({ id: 'hood-line', type: 'line', source: 'hoods', paint: { 'line-color': '#1d1d1f', 'line-opacity': 0.3, 'line-width': ['case', ['get', 'chosen'], 2, 0.6] } }, 'sites');
+  $('mapNote').textContent = 'Click a neighborhood to add or remove it. Dots are storefront addresses on our list, not confirmed vacancies.';
 }
 function areasData() {
   const feats = S.meta.neighborhoods.map((n) => {
@@ -375,9 +393,10 @@ function areasData() {
   return { type: 'FeatureCollection', features: feats };
 }
 function addAreaCircles(map) {
+  if (map.getSource('areas')) return;
   map.addSource('areas', { type: 'geojson', data: areasData() });
   map.addLayer({ id: 'areas', type: 'circle', source: 'areas', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 26, 14, 90], 'circle-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'], 'circle-opacity': ['case', ['get', 'chosen'], 0.22, 0.06], 'circle-stroke-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'], 'circle-stroke-width': 1.5, 'circle-stroke-opacity': 0.5 } }, 'sites');
-  map.addLayer({ id: 'area-labels', type: 'symbol', source: 'areas', layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0, -2.2], 'text-font': ['Noto Sans Bold'] }, paint: { 'text-color': '#1d1d1f', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } });
+  map.addLayer({ id: 'area-labels', type: 'symbol', source: 'areas', layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0, -2.2], 'text-font': ['Noto Sans Bold'] }, paint: { 'text-color': '#1d1d1f', 'text-halo-color': '#fff', 'text-halo-width': 2 } });
   $('mapNote').textContent = 'Click a neighborhood circle to add or remove it. Circles mark where our storefront addresses cluster (approximate areas). Dots are addresses, not confirmed vacancies.';
 }
 const boundsData = () => ({ ...S.bounds, features: S.bounds.features.map((f, i) => ({ ...f, id: i, properties: { ...f.properties, chosen: S.hoods.includes(f.properties.key) } })) });
@@ -479,7 +498,13 @@ function renderSites() {
     : '<div class="empty">No storefronts on our list in these neighborhoods yet. Go back and add The Mission or another neighborhood.</div>';
   renderSiteDetail().catch(showErr);
 }
-const gmaps = (s) => `<div style="margin:4px 0 8px;font-size:14px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ', San Francisco, CA')}" target="_blank" rel="noopener">Open in Google Maps</a> · <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}" target="_blank" rel="noopener">Street View</a></div>`;
+const pim = (s, tab) => `https://sfplanninggis.org/pim?${new URLSearchParams({ search: s.name, tab })}`;
+const lotButtons = (s) => `<div class="row" style="gap:8px;margin:10px 0 4px">
+  <a href="${pim(s, 'Zoning Information')}" target="_blank" rel="noopener" style="flex:1 1 180px"><button style="width:100%">Zoning for this lot</button></a>
+  <a href="${pim(s, 'Building Permits')}" target="_blank" rel="noopener" style="flex:1 1 180px"><button class="ghost" style="width:100%">Building permits</button></a>
+  <a href="${pim(s, 'Planning Applications')}" target="_blank" rel="noopener" style="flex:1 1 180px"><button class="ghost" style="width:100%">Planning applications</button></a></div>
+  <div class="note" style="margin-top:2px">Official SF Planning Property Information Map, already searched to this address. Permit Center: 49 South Van Ness.</div>`;
+const gmaps = (s) => lotButtons(s) + `<div style="margin:4px 0 8px;font-size:14px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ', San Francisco, CA')}" target="_blank" rel="noopener">Open in Google Maps</a> · <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}" target="_blank" rel="noopener">Street View</a></div>`;
 async function renderSiteDetail() {
   const s = S.meta.sites.find((x) => x.id === S.site);
   if (!s) { $('siteDetail').innerHTML = ''; return; }
