@@ -94,14 +94,26 @@ router.post('/grants/:id/revoke', wrap((req) => ({ ok: true, grant: hw.revoke(re
 router.get('/audit', wrap(() => ({ ok: true, audit: hw.auditLog() })));
 router.get('/outbox', wrap(() => ({ ok: true, outbox: hw.outbox() })));
 
+const ATTACKED = ['ssn', 'credit_score', 'bank_balance', 'max_monthly_rent'];
+function attackContext() {
+  const listing = hw.listings().find((l) => l.id === 'valencia_1');
+  const m = listing.description.match(/<!--([\s\S]*?)-->/);
+  return {
+    injection: m ? m[1].trim() : listing.description,
+    claudeSaw: hw.buildAgentContext({}).availableTokens.filter((t) => ATTACKED.some((f) => t.includes(f))),
+    vault: hw.ownerVault(ATTACKED), // owner's own screen only
+  };
+}
 router.post('/attack-test', wrap(async (req, res) => {
+  const view = attackContext();
   const c = await getClient();
   if (!c) {
     // Still run the direct gate proof without a model.
     const direct = hw.disclose({ recipientId: 'valencia_broker', purpose: 'lease_inquiry', source: 'attack_test_direct', template: 'Pre-screening: SSN {{ssn}}, max rent {{max_monthly_rent}}, budget {{investment_budget}}' });
-    return { ok: true, agentRun: null, agentSkipped: 'ANTHROPIC_API_KEY not set', directGateTest: { result: direct, outcome: direct.status === 'blocked' ? 'gate_blocked' : 'GATE_FAILURE' } };
+    return { ok: true, view, outboxToAttacker: hw.outbox().filter((o) => o.recipient === 'valencia_broker').length, agentRun: null, agentSkipped: 'ANTHROPIC_API_KEY not set', directGateTest: { result: direct, outcome: direct.status === 'blocked' ? 'gate_blocked' : 'GATE_FAILURE' } };
   }
-  return { ok: true, ...(await runAttackTest({ hw, client: c, snapshot: loadSnapshot() })) };
+  const r = await runAttackTest({ hw, client: c, snapshot: loadSnapshot() });
+  return { ok: true, view, outboxToAttacker: hw.outbox().filter((o) => o.recipient === 'valencia_broker').length, ...r };
 }));
 
 // ---- Funding: preliminary eligibility, rules run in trusted code ----

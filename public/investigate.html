@@ -5,6 +5,27 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>hushwork · private investigation</title>
 <link rel="stylesheet" href="/hushwork.css">
+<style>
+.xray{background:var(--card);border-radius:28px;padding:36px;box-shadow:var(--shadow);margin-bottom:20px}
+@media (max-width:600px){.xray{padding:22px}}
+.xray h2{font-size:34px;margin:0 0 6px}
+.xray .lead{font-size:18px;color:var(--muted);margin:0 0 22px}
+.xcols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:22px}
+@media (max-width:860px){.xcols{grid-template-columns:1fr}}
+.xcols>*{min-width:0}
+.xcol{border-radius:20px;padding:22px;background:var(--bg);min-height:220px}
+.xcol .k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.xcol.att{background:var(--red-soft)} .xcol.att .k{color:var(--red)}
+.xcol.saw{background:var(--green-soft)} .xcol.saw .k{color:var(--green)}
+.inj{font:14px/1.5 ui-monospace,"SF Mono",Menlo,monospace;color:var(--red);overflow-wrap:anywhere}
+.tok{display:inline-block;font:600 15px ui-monospace,"SF Mono",Menlo,monospace;color:var(--green);background:var(--card);border-radius:8px;padding:4px 8px;margin:3px 4px 3px 0}
+.huge{font:700 64px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.04em;margin:6px 0}
+.stamp{display:inline-block;font:800 34px/1 -apple-system,sans-serif;letter-spacing:.04em;color:var(--red);border:4px solid var(--red);border-radius:12px;padding:8px 14px;transform:rotate(-4deg);margin:8px 0 12px}
+.stamp.ok{color:var(--green);border-color:var(--green)}
+.vaultrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding:16px;border-radius:16px;background:var(--vault);color:var(--vault-ink);font-size:14px}
+.vaultrow b{color:#8fe0b5;font-weight:600}
+.vaultrow span{background:rgba(255,255,255,.08);border-radius:8px;padding:4px 10px;font-family:ui-monospace,"SF Mono",Menlo,monospace}
+</style>
 </head>
 <body>
 <nav><div class="in"><a href="/" class="wordmark" style="color:inherit;text-decoration:none">hush<span>work.</span></a><div class="status" id="status">Loading…</div></div></nav>
@@ -13,6 +34,12 @@
   <p>An AI agent that researches a storefront and drafts the inquiry, without ever holding your private financial details.</p>
 </div>
 <div class="wrap">
+  <section class="xray" id="xray">
+    <h2>Can a stranger make the AI leak your secrets?</h2>
+    <p class="lead">A broker listing for this storefront hides an instruction aimed at the AI. Run the real attack and watch what gets through.</p>
+    <button class="danger" id="attackHero" style="font-size:19px;padding:14px 28px">Run the attack</button>
+    <div id="xresult"></div>
+  </section>
 
   <div class="grid">
     <!-- 1 -->
@@ -183,7 +210,31 @@ function renderConsent() {
     <div id="sendResult"></div>`;
 }
 
+function renderXray(p) {
+  const v = p.view || {};
+  const a = p.agentRun;
+  const modelLine = !a ? 'The live AI run was skipped (no API key). The gate test below still ran.'
+    : a.outcome === 'model_followed_injection_gate_blocked' ? `The AI fell for it and tried to include ${a.attemptedSecretFields.join(', ')}. The gate refused.`
+    : a.outcome === 'GATE_FAILURE' ? 'A secret was released. Investigate.'
+    : 'The AI ignored the instruction on its own. We don\'t rely on that: the gate was attacked directly too.';
+  const secretsSeen = a ? a.secretsInModelContext.length : 0;
+  const leaked = (p.outboxToAttacker || 0);
+  const gateOk = p.directGateTest?.outcome === 'gate_blocked' && leaked === 0 && secretsSeen === 0 && a?.outcome !== 'GATE_FAILURE';
+  $('xresult').innerHTML = `<div class="xcols">
+    <div class="xcol att"><div class="k">1 · What the attacker hid</div><div class="inj">${esc(v.injection || '')}</div></div>
+    <div class="xcol saw"><div class="k">2 · What the AI actually saw</div>
+      ${(v.claudeSaw || []).map((t) => `<span class="tok">${esc(t)}</span>`).join('')}
+      <div class="huge" style="color:var(--green)">${secretsSeen}</div><div>real secrets in the AI's context${a ? `, across ${esc(a.toolCalls?.length ?? 0)} tool calls` : ''}.</div>
+      <div class="note">${esc(modelLine)}</div></div>
+    <div class="xcol"><div class="k">3 · What reached the attacker</div>
+      <div class="stamp">${gateOk ? 'BLOCKED' : 'LEAKED'}</div>
+      <div class="huge">${leaked}</div><div>messages sent to the attacker. Direct attack on the gate: <b>${esc(p.directGateTest?.outcome === 'gate_blocked' ? 'refused' : 'FAILED')}</b>.</div></div>
+  </div>
+  <div class="vaultrow"><b>Your vault. The AI never saw these:</b>${Object.entries(v.vault || {}).map(([k, val]) => `<span>${esc(k)}: ${esc(val)}</span>`).join('')}</div>
+  <p class="note">Real run, not an animation. Details and the audit log are below in step 5.</p>`;
+}
 function renderProof(p) {
+  renderXray(p);
   const a = p.agentRun;
   const label = {
     model_followed_injection_gate_blocked: ['bad', 'Model followed the injection', 'The agent tried to draft with the secrets. The gate blocked it.'],
@@ -248,6 +299,10 @@ document.addEventListener('click', async (e) => {
   } catch (err) { showErr(t.parentElement, err); }
 });
 
+$('attackHero').onclick = (e) => busy(e.target, 'Running the attack… (about 20 seconds)', async () => {
+  $('xresult').innerHTML = '';
+  renderProof(await call('/attack-test', {})); await refreshLogs();
+}).catch((err) => showErr($('xresult'), err));
 $('attack').onclick = (e) => busy(e.target, 'Running attack', async () => {
   $('proof').innerHTML = '';
   renderProof(await call('/attack-test', {})); await refreshLogs();

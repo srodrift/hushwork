@@ -294,6 +294,8 @@ export function createHushwork({
     auditLog: () => audit.map((e) => ({ ...e })),
     outbox: () => outbox.map((o) => ({ ...o })),
     listings: () => Object.values(listings).map((l) => ({ ...l })),
+    // Owner-only display of their own values (never passed to the agent).
+    ownerVault: (fields) => Object.fromEntries(fields.filter((f) => vault.has(f)).map((f) => [f, String(vault.get(f))])),
     _vaultValuesForTests: () => vaultValues().map(([, v]) => v),
   };
 }
