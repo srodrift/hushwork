@@ -232,7 +232,7 @@ const showErr = (err) => { $('hint').textContent = 'Error: ' + err.message; };
 // Step 1
 const CUSTOM_MAP = [
   ['bakery', ['bake', 'bread', 'pastr', 'cake', 'donut', 'doughnut', 'croissant', 'dessert', 'panader', 'cookie', 'bagel']],
-  ['chai', ['chai', 'tea', 'boba']],
+  ['chai', ['coffee', 'cafe', 'café', 'espresso', 'latte', 'chai', 'tea', 'boba']],
   ['restaurant', ['restaurant', 'kitchen', 'taco', 'pizza', 'momo', 'noodle', 'grill', 'cater', 'dumpling', 'burger']],
   ['grocery', ['grocery', 'market', 'deli', 'produce', 'mercado', 'bodega']],
   ['salon', ['salon', 'hair', 'nail', 'beauty', 'barber', 'spa', 'lash', 'brow']],
@@ -254,12 +254,15 @@ function afterTypes() {
 function matchCustom() {
   const q = $('custom').value.trim().toLowerCase();
   if (!q) { $('customNote').textContent = ''; return; }
-  const hits = CUSTOM_MAP.filter(([, words]) => words.some((w) => q.includes(w))).map(([k]) => k).slice(0, 2);
-  const extras = ['craft', 'handicraft', 'art', 'gift', 'clothing', 'boutique', 'jewelry', 'gallery'].filter((w) => q.includes(w));
+  const pos = (words) => Math.min(...words.map((w) => { const i = q.indexOf(w); return i < 0 ? Infinity : i; }));
+  const hits = CUSTOM_MAP.map(([k, words]) => [k, pos(words)]).filter(([, i]) => i < Infinity).sort((a, b) => a[1] - b[1]).map(([k]) => k).slice(0, 2);
+  const dropped = CUSTOM_MAP.map(([k, words]) => [k, pos(words)]).filter(([, i]) => i < Infinity).sort((a, b) => a[1] - b[1]).slice(2).map(([k]) => S.meta.types.find((t) => t.key === k)?.label);
+  const extras = ['plant', 'flower', 'florist', 'nursery', 'craft', 'handicraft', 'gift', 'clothing', 'boutique', 'jewelry', 'gallery', 'yoga', 'gym', 'studio'].filter((w) => q.includes(w));
   if (hits.length) {
     S.types = hits; afterTypes();
     $('customNote').innerHTML = `Got it. We'll look at city records for <b>${esc(typesOf().map((t) => t.label).join(' + '))}</b>.` +
-      (extras.length ? ` The ${esc(extras[0])} part isn't covered by our city data yet, so it won't show in the comparison.` : '');
+      (dropped.length ? ` We compare up to two types at a time, so ${esc(dropped.join(', '))} is left out; pick it on its own to compare it.` : '') +
+      (extras.length ? ` The ${esc(extras.join(', '))} part isn't covered by our city data yet.` : '');
   } else {
     $('customNote').textContent = `We don't have city data matched to "${q}" yet. Pick the closest type above to continue.`;
   }

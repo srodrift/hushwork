@@ -27,8 +27,8 @@ export const BUSINESS_TYPES = Object.freeze({
     needs: ['Ovens need ventilation (a hood) and adequate electrical or gas service', 'Health permit and plan check for a food facility', 'Prep sinks, hand sinks and a mop sink', 'Early-morning production hours'],
   },
   chai: {
-    label: 'Chai shop', food: true, sector: 'food',
-    keywords: ['CHAI', 'TEA'],
+    label: 'Café (coffee or chai)', food: true, sector: 'food',
+    keywords: ['COFFEE', 'CAFE', 'ESPRESSO', 'CHAI', 'TEA'],
     signals: ['similar_active', 'food_permits', 'sector_openings', 'sector_closures'],
     needs: ['Health permit for beverage and food service', 'Hand and prep sinks', 'Seating if customers will linger'],
   },
