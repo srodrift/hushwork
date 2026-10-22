@@ -4,6 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { createHushwork } from './core.js';
 import { runInvestigation, runAttackTest, DEFAULT_MODEL } from './agent.js';
 import { PROGRAMS } from './funding.js';
+import { MARKET_RENT, estimateMonthly } from './market.js';
 import { checkClaims, timeline } from './claims.js';
 import { evaluate, trueCost, tourChecklist, brokerTemplate, WORKSPACE_TYPES, COST_ITEMS } from './workspace.js';
 
@@ -114,6 +115,12 @@ router.post('/attack-test', wrap(async (req, res) => {
   }
   const r = await runAttackTest({ hw, client: c, snapshot: loadSnapshot() });
   return { ok: true, view, outboxToAttacker: hw.outbox().filter((o) => o.recipient === 'valencia_broker').length, ...r };
+}));
+
+// ---- Market rent context (citywide, sourced) + private comparison ----
+router.post('/market-rent', wrap((req) => {
+  const est = estimateMonthly(req.body?.sqft);
+  return { ok: true, market: MARKET_RENT, sqft: Number(req.body?.sqft) || null, estimateMonthly: est, budget: est ? hw.marketRentCheck({ estimateMonthly: est }) : { result: 'unknown' } };
 }));
 
 // ---- Funding: preliminary eligibility, rules run in trusted code ----

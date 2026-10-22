@@ -270,6 +270,15 @@ export function createHushwork({
     return { programId: p.id, checkedOn: CHECKED_ON, results, ...sum };
   }
 
+  // ---- Owner-only: compare a market-average estimate with the private max rent.
+  function marketRentCheck({ estimateMonthly }) {
+    const max = Number(String(vault.get('max_monthly_rent') || '').replace(/[^0-9.]/g, ''));
+    const est = Number(estimateMonthly);
+    const result = !max || !Number.isFinite(est) || est <= 0 ? 'unknown' : est <= max ? 'within' : 'over';
+    log({ type: 'derived', field: 'max_monthly_rent', source: 'owner_market_estimate', result });
+    return { result };
+  }
+
   // ---- What the agent is allowed to see ----
   function buildAgentContext(publicData = {}) {
     return {
@@ -286,7 +295,7 @@ export function createHushwork({
     grantConsent, revoke, approve, deny, setProfileField, getDraftForOwner, sendApproved,
     // agent tools
     prepareDraft, budgetCheck,
-    workspaceBudgetCheck, checkFunding,
+    workspaceBudgetCheck, checkFunding, marketRentCheck,
     // gate (direct) and context
     disclose, buildAgentContext,
     // read-only views

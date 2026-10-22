@@ -83,7 +83,7 @@ export const SIGNALS = Object.freeze({
 
 // Always unknown: no trustworthy public source in this prototype.
 export const ALWAYS_UNKNOWN = Object.freeze([
-  'Commercial rent (no public rent data; broker quotes are unverified)',
+  'Rent for any specific space (only a citywide market average is published; broker quotes are unverified)',
   'Foot traffic (no public counts used)',
   'Current vacancy of any storefront (records show history, not today)',
   'Transit access for your customers and staff (not analyzed yet)',

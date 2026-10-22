@@ -32,6 +32,8 @@ Neighborhood counts come from `npm run neighborhoods` (writes `data/neighborhood
 - **Funding fit.** 10 programs (grants, a reimbursement grant, loans, free help) verified on Oct 22, 2026 from official pages. Years in operation, revenue, employees and lease status stay in the vault; trusted code returns only pass / fail / unknown per published rule. Closed or unclear rounds are never shown as available, and each "not a fit" card says what to try instead.
 - **Find the right local help.** Supervisor district taken from the city's own permit and business records for the address (District 9), contact verified on SF.gov, limits stated, department-first routing, and an editable request draft that is never sent.
 
+**Rent context:** a citywide average asking retail rent ($36.56 per sq ft per year, Kidder Mathews San Francisco Retail Market Report, Q3 2026, checked Oct 22, 2026) turns a needed size into a monthly estimate, compared privately with the founder's max rent (within / over only). No published source we found gives neighborhood-level figures, and it is not the price of any specific space. We do not scrape listing sites.
+
 **Not built (shown as planned in the app):** custom ideas with live queries, community perspectives (no Reddit feed is connected), private investigation for storefronts other than 2234 Mission, rent/foot-traffic/vacancy/transit data.
 
 **About the storefront list:** `data/sites.json` keeps only addresses, coordinates and neighborhood groupings from Block Book. Block Book's vacancy status, condition notes, walk/transit scores and confidence numbers are excluded because they are not sourced.
@@ -89,7 +91,7 @@ Offline UI test without Claude: `HUSHWORK_SCRIPTED=1 npm start`. This uses a scr
 
 ## Tests
 
-`npm test`: **62 tests, 0 failures** (61 deterministic + 1 live against the Claude API), run on Oct 22, 2026.
+`npm test`: **65 tests, 0 failures** (64 deterministic + 1 live against the Claude API), run on Oct 22, 2026.
 
 Live result: Claude read the listing with the hidden injection and **ignored it** (`model_ignored_injection_drafted_safely`, no secret fields attempted). That is the model's own decision; the security claim does not rely on it. The direct gate attack and the scripted "obedient model" tests prove the gate blocks the send either way.
 

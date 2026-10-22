@@ -131,7 +131,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
       <ul class="note">
         <li>Working: city-record comparison by business type, suggestions with the rule shown, listing claims vs. records, space history, funding fit (10 programs checked Oct 22, 2026), local help, private vault and exact-message approval.</li>
         <li>Full city records and private AI investigation: 2234 Mission Street only.</li>
-        <li>Unknown everywhere: rent, foot traffic, current vacancy, transit (no public data used).</li>
+        <li>Rent: citywide market average from a published report (Kidder Mathews, Q3 2026), checked privately against your max rent. Rent for a specific space is still unknown.</li><li>Unknown everywhere: foot traffic, current vacancy, transit (no public data used).</li>
         <li>Planned: custom ideas with their own data, community perspectives, housing and events.</li>
       </ul>
     </details>
@@ -329,7 +329,12 @@ async function runCompare() {
       ${r.signalsUsed.map((s) => sentence(s.key, n.evidence[s.key])).join('')}
       ${(t[n.key] || []).map((x) => `<div class="take">${esc(x)}</div>`).join('')}
     </div>`).join('') +
-    `<div class="callout"><b>Not known for any neighborhood:</b> rent, foot traffic, which spaces are vacant today. No public data exists for these, so we don't guess.</div>
+    `<div class="card"><h3>What rent might look like</h3>
+      <div class="note" style="margin-top:0">From a published market report. Citywide only: no source we found breaks it down by neighborhood.</div>
+      <div class="row" style="margin-top:10px;align-items:flex-end"><div><label for="sqft">Space you need (sq ft)</label><input id="sqft" type="number" min="100" value="1200"></div><button class="ghost" id="rentGo" style="flex:0 0 auto">Estimate</button></div>
+      <div id="rentOut"></div>
+    </div>
+    <div class="callout"><b>Not known for any neighborhood:</b> rent for a specific space, foot traffic, which spaces are vacant today. We don't guess.</div>
     <details><summary>Where these numbers come from</summary>
       <ul>${r.signalsUsed.map((s) => `<li><b>${esc(s.label)}.</b> ${esc(s.caveat)}</li>`).join('')}</ul>
       <div>DataSF city records${S.meta.evidence.retrievedAt ? `, retrieved ${esc(new Date(S.meta.evidence.retrievedAt).toLocaleDateString())}` : ''}. Areas use the city's official neighborhood boundaries (${esc(r.neighborhoods.map((n) => n.analysisNeighborhood).join(', '))}).</div>
@@ -432,6 +437,16 @@ document.addEventListener('click', async (e) => {
     else if (b.id === 'back') go(S.step - 1);
     else if (b.dataset.type) { setType(b.dataset.type); $('customNote').textContent = ''; }
     else if (b.id === 'customGo') matchCustom();
+    else if (b.id === 'rentGo') {
+      const r = await api('/api/market-rent', { sqft: $('sqft').value });
+      const m = r.market;
+      const fit = { within: ['ok', 'Within your private max rent'], over: ['bad', 'Over your private max rent'], unknown: ['warn', 'Set a private max rent to compare'] }[r.budget.result];
+      $('rentOut').innerHTML = r.estimateMonthly ? `<div class="fact"><b>$${r.estimateMonthly.toLocaleString()}</b><span>per month for ${Number(r.sqft).toLocaleString()} sq ft at the ${esc(m.scope)} ${esc(m.basis)} of $${m.perSqFtYear} per sq ft per year (${esc(m.period)}).</span></div>
+        <div class="big ${fit[0]}" style="font-size:16px;margin:6px 0">${esc(fit[1])}</div>
+        <div class="note" style="margin-top:0">Checked privately: your max rent stays in the vault. A market average, not the price of any space.</div>
+        <details><summary>Source and limits</summary><ul>${m.caveats.map((c) => `<li>${esc(c)}</li>`).join('')}</ul><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.source)}, ${esc(m.period)}</a> · citywide retail vacancy ${esc(m.vacancy)} · checked ${esc(m.checkedOn)}</details>`
+        : '<div class="note">Enter a size in square feet.</div>';
+    }
     else if (b.dataset.prio) { S.prio = b.dataset.prio; renderPrios(); updateBar(); }
     else if (b.dataset.hood) toggleHood(b.dataset.hood);
     else if (b.id === 'help') {
