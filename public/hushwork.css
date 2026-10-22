@@ -1,16 +1,16 @@
 :root{
-  --bg:#f7f6f2; --card:#fffefb; --ink:#1d1d1f; --muted:#6e6e73; --line:#d2d2d7; --hair:rgba(0,0,0,.08);
-  --blue:#1f6b4a; --blue-hover:#24795a; --link:#1f6b4a;
-  --green:#1d7d3a; --green-soft:#e8f5ec; --amber:#b25000; --amber-soft:#fff4e5;
+  --bg:#f2f3f5; --card:#ffffff; --ink:#1d1d1f; --muted:#6e6e73; --line:#d2d2d7; --hair:rgba(0,0,0,.08);
+  --blue:#c0362c; --blue-hover:#a82e25; --link:#b23a2a;
+  --green:#1b4f8a; --green-soft:#e6eef8; --amber:#b25000; --amber-soft:#fff4e5;
   --red:#d70015; --red-soft:#ffebe9;
-  --vault:#232321; --vault-ink:#f5f5f7; --vault-muted:#a1a1a6; --vault-field:#2c2c2e;
-  --nav:rgba(247,246,242,.82); --field:#fff; --shadow:0 2px 12px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.05);
+  --vault:#14263f; --vault-ink:#f5f5f7; --vault-muted:#a1a1a6; --vault-field:#20385a;
+  --nav:rgba(242,243,245,.85); --field:#fff; --shadow:0 2px 12px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.05);
   --radius:22px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#111110; --card:#1c1c1b; --ink:#f5f5f7; --muted:#a1a1a6; --line:#3a3a3c; --hair:rgba(255,255,255,.1);
-  --blue:#3fbf7f; --blue-hover:#5ccf94; --link:#5ccf94;
-  --green:#30d158; --green-soft:rgba(48,209,88,.14); --amber:#ff9f0a; --amber-soft:rgba(255,159,10,.14);
+  --blue:#f0643f; --blue-hover:#ff7a55; --link:#ff8a66;
+  --green:#7fb2ec; --green-soft:rgba(127,178,236,.14); --amber:#ff9f0a; --amber-soft:rgba(255,159,10,.14);
   --red:#ff453a; --red-soft:rgba(255,69,58,.14);
   --vault:#2c2c2e; --vault-field:#3a3a3c; --nav:rgba(22,22,23,.8); --field:#2c2c2e; --shadow:none;
 }}
@@ -24,7 +24,7 @@ nav .in{max-width:1080px;margin:0 auto;padding:0 22px;height:52px;display:flex;a
 .status{font-size:12px;color:var(--muted);letter-spacing:-.01em}
 .hero{text-align:center;padding:72px 22px 44px}
 .hero h1{font:600 clamp(40px,6.4vw,64px)/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.035em;margin:0}
-.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--blue),#5a8f6f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,#c0362c,#e8742a);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:21px;color:var(--muted);max-width:640px;margin:18px auto 0;line-height:1.38}
 .wrap{max-width:1080px;margin:0 auto;padding:0 22px 96px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -41,7 +41,7 @@ section.private .mono{color:var(--vault-ink)}
 h2{font:600 28px/1.14 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.028em;margin:0 0 8px}
 .num{display:block;font:600 12px/1 -apple-system,sans-serif;letter-spacing:.02em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
 .num::before{content:"Step "}
-.private .num{color:#8fe0b5}
+.private .num{color:#ffb48f}
 .sub{color:var(--muted);font-size:15px;margin:0 0 20px;line-height:1.45}
 .chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.01em;padding:3px 9px;border-radius:980px;vertical-align:1px}
 .chip.public,.chip.ok{color:var(--green);background:var(--green-soft)}
@@ -57,7 +57,7 @@ a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:18px 0 6px;letter-spacing:0}
 input,select,textarea{width:100%;font:inherit;font-size:16px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(31,107,74,.16)}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(192,54,44,.16)}
 textarea{line-height:1.5;resize:vertical}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .row>*{flex:1;min-width:0}
@@ -65,8 +65,8 @@ button{font:400 17px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:
 button:hover{background:var(--blue-hover)}
 button:active{transform:scale(.98)}
 button.ghost{background:transparent;color:var(--link);border:1px solid var(--link)}
-button.ghost:hover{background:rgba(31,107,74,.06)}
-section.private button.ghost{color:#8fe0b5;border-color:#8fe0b5}
+button.ghost:hover{background:rgba(192,54,44,.06)}
+section.private button.ghost{color:#ffb48f;border-color:#ffb48f}
 button.danger{background:var(--red)}
 button.danger:hover{background:var(--red);filter:brightness(1.08)}
 button.small{padding:5px 14px;font-size:13px}

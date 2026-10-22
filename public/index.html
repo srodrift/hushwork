@@ -71,6 +71,8 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
       <div class="row"><input id="custom" placeholder="e.g., croissant shop, momo counter, nail studio"><button class="ghost" id="customGo" style="flex:0 0 auto">Find closest</button></div>
       <div class="note" id="customNote"></div>
     </div>
+    <div class="mapslot" data-for="1"></div>
+    <div class="note">55 storefront addresses across 11 San Francisco neighborhoods. You'll choose where to look in step 3.</div>
   </section>
 
   <section class="step" data-step="2">
@@ -91,7 +93,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
     <button id="help">Suggest neighborhoods for me</button>
     <div class="note" id="helpRule"></div>
     <div class="choices" id="hoods" style="margin-top:16px"></div>
-    <div id="map"></div>
+    <div class="mapslot" data-for="3"><div id="map"></div></div>
     <div class="note" id="mapNote">Tap a neighborhood on the map or above. Dots are storefront addresses on our list, not confirmed vacancies.</div>
   </section>
 
@@ -176,7 +178,8 @@ function go(n) {
   $('progress').innerHTML = Array.from({ length: TOTAL }, (_, i) => `<span class="${i < S.step ? 'on' : ''}"></span>`).join('');
   $('stepno').textContent = `Step ${S.step} of ${TOTAL}`;
   window.scrollTo(0, 0);
-  if (S.step === 3) { if (!S.map) initMap(); else S.map.resize(); }
+  const slot = document.querySelector(`.step.on .mapslot`);
+  if (slot) { slot.appendChild($('map')); if (!S.map) initMap(); else S.map.resize(); }
   if (S.step === 4) runCompare().catch(showErr);
   if (S.step === 5) renderSites();
   if (S.step === 7) renderChecklist().catch(showErr);
@@ -260,7 +263,7 @@ function initMap() {
     map.addSource('sites', { type: 'geojson', data: geo() });
     map.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: {
       'circle-radius': ['case', ['get', 'chosen'], 6, 4],
-      'circle-color': ['case', ['get', 'chosen'], '#1f6b4a', '#8e8e93'],
+      'circle-color': ['case', ['get', 'chosen'], '#c0362c', '#8e8e93'],
       'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } });
     map.on('click', 'sites', (e) => {
       const s = S.meta.sites.find((x) => x.id === e.features[0].properties.id);
@@ -281,7 +284,7 @@ async function loadBoundaries(map) {
     S.bounds = gj;
     map.addSource('hoods', { type: 'geojson', data: boundsData() });
     map.addLayer({ id: 'hood-fill', type: 'fill', source: 'hoods', paint: {
-      'fill-color': ['case', ['get', 'chosen'], '#1f6b4a', '#1d1d1f'],
+      'fill-color': ['case', ['get', 'chosen'], '#c0362c', '#1d1d1f'],
       'fill-opacity': ['case', ['get', 'chosen'], 0.3, ['==', ['get', 'key'], ''], 0.02, 0.07] } }, 'sites');
     map.addLayer({ id: 'hood-line', type: 'line', source: 'hoods', paint: { 'line-color': '#1d1d1f', 'line-opacity': 0.3, 'line-width': ['case', ['get', 'chosen'], 2, 0.6] } }, 'sites');
     map.on('click', 'hood-fill', (e) => {
