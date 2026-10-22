@@ -51,7 +51,7 @@
 </style>
 </head>
 <body>
-<nav><div class="in"><div class="wordmark">hush<span>work.</span></div><span class="status"><a href="/workspace.html">Startup workspace</a> · <a href="/investigate.html">Privacy demo</a></span></div></nav>
+<nav><div class="in"><div class="wordmark">hush<span>work.</span></div><a class="status" href="/investigate.html">Privacy demo →</a></div></nav>
 
 <div class="hero">
   <h1>Open your business<br><em>in the right place.</em></h1>
@@ -124,8 +124,37 @@
     <div id="sites"><div class="empty">Compare neighborhoods first.</div></div>
   </section>
 
+  <section class="full" id="sFund">
+    <h2><span class="num">5</span>Funding that may fit</h2>
+    <p class="sub">Answer a few questions. Your private answers stay in the vault; trusted code checks each program's published rules and returns only ✓, ✗ or ? per rule. This is a preliminary check, not an eligibility decision.</p>
+    <div class="row" style="align-items:flex-start;gap:20px">
+      <div style="flex:1 1 300px">
+        <label for="fYears">Years your business has operated <span class="chip private">private</span></label><input id="fYears" type="number" min="0" value="0">
+        <label for="fRevenue">Annual revenue <span class="chip private">private</span></label><input id="fRevenue" value="$0">
+        <label for="fEmployees">Employees <span class="chip private">private</span></label><input id="fEmployees" type="number" min="0" value="0">
+        <label for="fLease">Lease status <span class="chip private">private</span></label>
+        <select id="fLease"><option value="no_lease_yet">No lease yet</option><option value="signed_new">Signed a new lease (started Oct 2025 or later)</option><option value="signed">Signed an older lease</option></select>
+      </div>
+      <div style="flex:1 1 300px">
+        <label>Where</label><div id="fWhere" class="note" style="margin-top:0">Pick a storefront in step 4.</div>
+        <label>On-site seating for customers?</label>
+        <div class="choices"><button class="choice small" data-dining="true" aria-pressed="true">Yes</button><button class="choice small" data-dining="false" aria-pressed="false">No</button></div>
+        <label>What do you need money for?</label>
+        <div class="choices" id="fExp">
+          <button class="choice small" data-exp="buildout" aria-pressed="true">Buildout</button>
+          <button class="choice small" data-exp="equipment" aria-pressed="true">Equipment</button>
+          <button class="choice small" data-exp="working_capital" aria-pressed="false">Working capital</button>
+          <button class="choice small" data-exp="accessibility" aria-pressed="false">Accessibility</button>
+          <button class="choice small" data-exp="planning" aria-pressed="false">Planning help</button>
+        </div>
+        <div style="margin-top:18px"><button id="fCheck">Check funding fit</button></div>
+      </div>
+    </div>
+    <div id="funding" style="margin-top:20px"></div>
+  </section>
+
   <section class="full" id="s5">
-    <h2><span class="num">5</span>Your next steps</h2>
+    <h2><span class="num">6</span>Your next steps</h2>
     <p class="sub">A practical checklist for your business type and storefront. Tick items off as you go.</p>
     <div id="checklist"><div class="empty">Pick a storefront in step 4.</div></div>
   </section>
@@ -140,8 +169,12 @@
       <tr><td>"Help me choose": transparent sort on one signal you pick</td><td><span class="working">Working</span></td></tr>
       <tr><td>Storefront map and list (addresses only; vacancy unverified)</td><td><span class="working">Working</span></td></tr>
       <tr><td>Checklist with official resources and immigration-adviser questions</td><td><span class="working">Working</span></td></tr>
+      <tr><td>Listing claims checked against city records (2234 Mission Street)</td><td><span class="working">Working</span></td></tr>
+      <tr><td>Space history timeline from city records (2234 Mission Street)</td><td><span class="working">Working</span></td></tr>
+      <tr><td>Funding fit: 10 programs verified Oct 22, 2026; private rules checked in trusted code</td><td><span class="working">Working</span></td></tr>
       <tr><td>Private budget vault; AI investigation with exact-message consent (2234 Mission Street only)</td><td><span class="working">Working</span></td></tr>
       <tr><td>Rent, foot traffic, current vacancy, transit analysis</td><td><span class="planned">Unknown · no data source</span></td></tr>
+      <tr><td>Housing, events, food resources, office space</td><td><span class="planned">Deferred</span></td></tr>
       <tr><td>Custom business ideas with live queries</td><td><span class="planned">Planned</span></td></tr>
       <tr><td>Community perspectives (e.g., Reddit), dated and labeled as opinion</td><td><span class="planned">Planned · not connected</span></td></tr>
       <tr><td>Private investigation for storefronts other than 2234 Mission</td><td><span class="planned">Planned</span></td></tr>
@@ -199,6 +232,7 @@ function initMap() {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   map.on('error', () => {});
   map.on('load', () => {
+    loadBoundaries(map);
     map.addSource('sites', { type: 'geojson', data: geo() });
     map.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: {
       'circle-radius': ['case', ['get', 'selected'], 10, ['get', 'chosen'], 7, 5],
@@ -216,12 +250,55 @@ function initMap() {
   });
   S.map = map;
 }
+// Official DataSF "Analysis Neighborhoods" boundaries, fetched by the browser.
+// If they cannot load, pins and the neighborhood buttons still work.
+S.bounds = null;
+async function loadBoundaries(map) {
+  const byAnalysis = Object.fromEntries(S.meta.neighborhoods.map((n) => [n.analysis, n.key]));
+  try {
+    const r = await fetch('https://data.sfgov.org/resource/j2bu-swwd.geojson?$limit=100');
+    if (!r.ok) throw new Error(r.status);
+    const gj = await r.json();
+    gj.features = (gj.features || []).map((f) => {
+      const name = f.properties?.nhood || f.properties?.name || '';
+      return { ...f, properties: { name, key: byAnalysis[name] || '' } };
+    }).filter((f) => f.properties.name);
+    if (!gj.features.length) throw new Error('no features');
+    S.bounds = gj;
+    map.addSource('hoods', { type: 'geojson', data: boundsData() });
+    map.addLayer({ id: 'hood-fill', type: 'fill', source: 'hoods', paint: {
+      'fill-color': ['case', ['get', 'chosen'], '#1f6b4a', ['==', ['get', 'key'], ''], '#d2d2d7', '#1d1d1f'],
+      'fill-opacity': ['case', ['get', 'chosen'], 0.28, ['boolean', ['feature-state', 'hover'], false], 0.16, ['==', ['get', 'key'], ''], 0.04, 0.07] } });
+    map.addLayer({ id: 'hood-line', type: 'line', source: 'hoods', paint: { 'line-color': '#1d1d1f', 'line-opacity': 0.35, 'line-width': ['case', ['get', 'chosen'], 2, 0.8] } });
+    if (map.getLayer('sites')) map.moveLayer('sites');
+    let hovered = null;
+    map.on('mousemove', 'hood-fill', (e) => {
+      const f = e.features[0]; map.getCanvas().style.cursor = f.properties.key ? 'pointer' : '';
+      if (hovered !== null) map.setFeatureState({ source: 'hoods', id: hovered }, { hover: false });
+      hovered = f.id ?? null; if (hovered !== null) map.setFeatureState({ source: 'hoods', id: hovered }, { hover: true });
+    });
+    map.on('mouseleave', 'hood-fill', () => { map.getCanvas().style.cursor = ''; if (hovered !== null) map.setFeatureState({ source: 'hoods', id: hovered }, { hover: false }); hovered = null; });
+    map.on('click', 'hood-fill', (e) => {
+      if (map.queryRenderedFeatures(e.point, { layers: ['sites'] }).length) return;
+      const f = e.features[0];
+      if (f.properties.key) toggleHood(f.properties.key);
+      else new maplibregl.Popup({ closeButton: false }).setLngLat(e.lngLat).setHTML(`<b>${esc(f.properties.name)}</b><br><span style="color:#6e6e73">No storefronts on our list here yet</span>`).addTo(map);
+    });
+    $('mapNote').textContent = 'Click a neighborhood to add or remove it. Boundaries: DataSF Analysis Neighborhoods. Pins are storefront addresses on our list, not confirmed vacancies.';
+  } catch (e) {
+    $('mapNote').textContent = 'Neighborhood boundaries could not load, so use the buttons above. Pins are storefront addresses on our list, not confirmed vacancies.';
+  }
+}
+function boundsData() {
+  return { ...S.bounds, features: S.bounds.features.map((f, i) => ({ ...f, id: i, properties: { ...f.properties, chosen: S.hoods.includes(f.properties.key) } })) };
+}
 function geo() {
   return { type: 'FeatureCollection', features: S.meta.sites.map((s) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lng, s.lat] }, properties: { id: s.id, chosen: S.hoods.includes(s.corridor), selected: S.site === s.id } })) };
 }
 function updateMap(fit = true) {
   const m = S.map; if (!m || !m.getSource('sites')) return;
   m.getSource('sites').setData(geo());
+  if (S.bounds && m.getSource('hoods')) m.getSource('hoods').setData(boundsData());
   const pts = S.meta.sites.filter((s) => S.hoods.includes(s.corridor));
   if (fit && pts.length) {
     const b = pts.reduce((b, s) => b.extend([s.lng, s.lat]), new maplibregl.LngLatBounds([pts[0].lng, pts[0].lat], [pts[0].lng, pts[0].lat]));
@@ -308,11 +385,13 @@ function renderSites() {
         <li><b>Why look:</b> it's on our storefront list in ${esc(hoodName(s.corridor))}, a neighborhood you chose.</li>
         <li><b>Verify:</b> availability, rent, condition${t.food ? ', past food use and kitchen equipment' : ''}, permitted use.</li>
       </ul>
-      ${priv ? recordsBlock() + `<div style="margin-top:10px"><a href="/investigate.html"><button class="small">Investigate privately with AI →</button></a></div>` : `<div class="note"><span class="planned">Planned</span> City records and private AI investigation not pulled for this address yet.</div>`}
+      ${priv ? `<div id="claimsPanel"><div class="note">Loading city records…</div></div><div style="margin-top:10px"><a href="/investigate.html"><button class="small">Investigate privately with AI →</button></a></div>` : `<div class="note"><span class="planned">Planned</span> City records and private AI investigation not pulled for this address yet.</div>`}
     </div>`; }).join('')}</div>`;
+  loadClaims();
 }
 async function selectSite(id, scroll = true) {
   S.site = id; updateMap(false);
+  { const st = S.meta.sites.find((x) => x.id === id); $('fWhere').textContent = st ? `${st.name}, ${hoodName(st.corridor)}` : 'Pick a storefront in step 4.'; }
   document.querySelectorAll('[data-site]').forEach((el) => el.setAttribute('aria-selected', el.dataset.site === id));
   await renderChecklist();
   if (scroll) $('s5').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -330,6 +409,66 @@ async function renderChecklist() {
     const text = c.title + '\n\n' + c.sections.map((s) => s.title + '\n' + (s.note ? s.note + '\n' : '') + s.items.map((i) => '[ ] ' + i.text + (i.link ? ' ' + i.link.url : '')).join('\n')).join('\n\n');
     try { await navigator.clipboard.writeText(text); $('copied').textContent = 'Copied.'; } catch { $('copied').textContent = 'Copy not allowed by this browser.'; }
   };
+}
+
+
+// ---------- Claims + timeline (2234 Mission only) ----------
+const VERDICT = { conflicts_with_records: ['block', 'Conflicts with records'], partly_supported: ['unverified', 'Partly supported'], supported: ['ok', 'Supported'], no_public_record: ['private', 'No public record'] };
+async function loadClaims() {
+  const el = $('claimsPanel'); if (!el) return;
+  try {
+    const r = await api('/api/claims/mission_1');
+    const t = r.timeline;
+    el.innerHTML = `
+      <label>Broker says vs. city records</label>
+      ${r.claims.map((c) => `<div class="ev" style="padding:8px 0"><span class="chip ${VERDICT[c.verdict][0]}">${VERDICT[c.verdict][1]}</span> <b>“${esc(c.text)}”</b><small>${esc(c.explanation)}${c.evidence?.url ? ` <a href="${esc(c.evidence.url)}" target="_blank" rel="noopener">records</a>` : ''}</small></div>`).join('')}
+      ${t ? `<label>History of this space</label>
+      <div class="note" style="margin-top:0">${esc(t.caution)}</div>
+      <ul style="font-size:14px">${t.events.slice(0, 10).map((e) => `<li><span class="mono">${esc(e.date || '—')}</span> ${esc(e.text)}</li>`).join('')}</ul>
+      <a href="${esc(t.sources.businesses)}" target="_blank" rel="noopener" style="font-size:13px">Business records</a> · <a href="${esc(t.sources.permits)}" target="_blank" rel="noopener" style="font-size:13px">Permit records</a> · <span class="note">retrieved ${esc(String(t.retrievedAt).slice(0, 10))}</span>` : ''}`;
+  } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+// ---------- Funding ----------
+const KIND_CHIP = { 'grant': 'ok', 'grant + help': 'ok', 'loan': 'private', 'reimbursement': 'unverified', 'non-cash help': 'public', 'free help': 'public' };
+const STATUS = { open: ['ok', 'Open'], open_unverified: ['unverified', 'Open · details unverified'], closed: ['block', 'Closed'], unclear: ['block', 'Not currently open (unclear)'], not_stated: ['unverified', 'Status not stated'] };
+const pressed = (sel) => [...document.querySelectorAll(sel)].filter((b) => b.getAttribute('aria-pressed') === 'true');
+async function checkFunding() {
+  const site = S.meta.sites.find((x) => x.id === S.site);
+  for (const [field, id] of [['years_operating', 'fYears'], ['annual_revenue', 'fRevenue'], ['employees', 'fEmployees'], ['lease_status', 'fLease']]) await api('/api/profile', { field, value: $(id).value });
+  const dining = pressed('[data-dining]')[0]?.dataset.dining === 'true';
+  const exp = pressed('[data-exp]').map((b) => b.dataset.exp);
+  const t = S.meta.types.find((x) => x.key === S.type);
+  const [{ programs }, { results }] = await Promise.all([api('/api/funding/programs'), api('/api/funding/check', { public: { corridor: site?.corridor, on_site_dining: dining, food: !!t?.food } })]);
+  const byId = Object.fromEntries(programs.map((p) => [p.id, p]));
+  const rows = results.map((r) => ({ r, p: byId[r.programId], rel: (byId[r.programId].expenses || []).some((e) => exp.includes(e)) }));
+  const notNow = (x) => x.r.match === 'likely_not_eligible' || x.p.status === 'closed' || x.p.status === 'unclear';
+  const groups = [
+    ['May fit', rows.filter((x) => !notNow(x) && x.r.match === 'may_be_eligible')],
+    ['Need more information', rows.filter((x) => !notNow(x) && x.r.match !== 'may_be_eligible')],
+    ['Not a fit right now, and what to do instead', rows.filter(notNow)],
+  ];
+  console.assert(groups.reduce((n, [, g]) => n + g.length, 0) === rows.length, 'every program shown');
+  const card = ({ r, p, rel }) => {
+    const st = STATUS[p.status] || STATUS.not_stated;
+    const fits = r.results.filter((c) => c.result === 'pass'), fails = r.results.filter((c) => c.result === 'fail'), unk = r.results.filter((c) => c.result === 'unknown');
+    const closedish = p.status === 'closed' || p.status === 'unclear';
+    const instead = (p.instead || []).map((id) => byId[id]?.name).filter(Boolean);
+    return `<div class="hood" style="margin-bottom:14px">
+      <div><span class="chip ${KIND_CHIP[p.kind] || 'public'}">${esc(p.kind)}</span> <span class="chip ${st[0]}">${esc(st[1])}</span>${rel ? ' <span class="chip public">matches your expenses</span>' : ''}</div>
+      <h3 style="margin-top:8px">${esc(p.name)}</h3>
+      <div class="meta">${esc(p.amount)} · Deadline: ${esc(p.deadline || 'Not stated')} · Checked ${esc(r.checkedOn)}</div>
+      <div class="note" style="margin-top:0">${esc(p.statusNote)}</div>
+      ${fits.length ? `<label>Why it may fit</label><ul>${fits.map((c) => `<li>✓ ${esc(c.label)}${c.private ? ' <span class="chip private">checked privately</span>' : ''}</li>`).join('')}</ul>` : ''}
+      ${fails.length || p.exclusions ? `<label>What rules you out</label><ul>${fails.map((c) => `<li>✗ ${esc(c.label)}${c.private ? ' <span class="chip private">checked privately</span>' : ''}</li>`).join('')}${(p.exclusions || []).map((x) => `<li>Excluded: ${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${unk.length ? `<label>Still unknown</label><ul>${unk.map((c) => `<li>? ${esc(c.label)}</li>`).join('')}</ul>` : ''}
+      ${(fails.length || closedish) && instead.length ? `<label>Why not, and what instead</label><p style="margin:4px 0;font-size:14px">${closedish ? 'This round is not open now. ' : ''}${fails.length ? 'At least one published rule rules you out. ' : ''}Look at: ${instead.map(esc).join(', ')}.</p>` : ''}
+      <label>Prepare</label><ul>${p.prepare.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div style="font-size:13px;margin-top:8px"><a href="${esc(p.source)}" target="_blank" rel="noopener">Source</a>${p.apply && !closedish ? ` · <a href="${esc(p.apply)}" target="_blank" rel="noopener">Where to apply</a>` : ''}</div>
+    </div>`;
+  };
+  $('funding').innerHTML = `<div class="note" style="margin-top:0">Hushwork never applies for you and cannot promise an award. Confirm every rule with the program.</div>` +
+    groups.filter(([, g]) => g.length).map(([title, g]) => `<label style="font-size:15px;color:var(--ink)">${esc(title)}</label><div class="cols">${g.sort((a, b) => b.rel - a.rel).map(card).join('')}</div>`).join('');
 }
 
 // ---------- Events ----------
@@ -358,6 +497,12 @@ document.addEventListener('click', async (e) => {
       if (!h.picks.length) { $('helpRule').innerHTML = '<span style="color:var(--amber)">No neighborhood records loaded, so we can\'t suggest anything yet. Choose neighborhoods yourself.</span>'; return; }
       S.hoods = h.picks; renderHoods(); await runCompare();
       $('helpRule').textContent = h.rule + (h.unknown.length ? ` No data for: ${h.unknown.join(', ')}.` : '');
+    } else if (b.dataset.dining) {
+      document.querySelectorAll('[data-dining]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    } else if (b.dataset.exp) {
+      b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true');
+    } else if (b.id === 'fCheck') {
+      b.disabled = true; try { await checkFunding(); } finally { b.disabled = false; }
     } else if (b.id === 'saveBudget') {
       await api('/api/profile', { field: 'investment_budget', value: $('budget').value });
       $('budgetSaved').textContent = 'Saved to the private vault.';

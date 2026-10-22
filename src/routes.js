@@ -3,6 +3,8 @@ import express from 'express';
 import { readFileSync, existsSync } from 'node:fs';
 import { createHushwork } from './core.js';
 import { runInvestigation, runAttackTest, DEFAULT_MODEL } from './agent.js';
+import { PROGRAMS } from './funding.js';
+import { checkClaims, timeline } from './claims.js';
 import { evaluate, trueCost, tourChecklist, brokerTemplate, WORKSPACE_TYPES, COST_ITEMS } from './workspace.js';
 
 try { process.loadEnvFile?.(); } catch { /* no .env */ }
@@ -41,7 +43,7 @@ async function getClient() {
   return client;
 }
 
-const EDITABLE = ['investment_budget', 'max_monthly_rent', 'business_plan_summary', 'monthly_workspace_budget', 'runway_months', 'company_name', 'team_size'];
+const EDITABLE = ['years_operating', 'annual_revenue', 'employees', 'lease_status', 'investment_budget', 'max_monthly_rent', 'business_plan_summary', 'monthly_workspace_budget', 'runway_months', 'company_name', 'team_size'];
 const router = express.Router();
 router.use(express.json({ limit: '50kb' }));
 
@@ -100,6 +102,22 @@ router.post('/attack-test', wrap(async (req, res) => {
     return { ok: true, agentRun: null, agentSkipped: 'ANTHROPIC_API_KEY not set', directGateTest: { result: direct, outcome: direct.status === 'blocked' ? 'gate_blocked' : 'GATE_FAILURE' } };
   }
   return { ok: true, ...(await runAttackTest({ hw, client: c, snapshot: loadSnapshot() })) };
+}));
+
+// ---- Funding: preliminary eligibility, rules run in trusted code ----
+router.get('/funding/programs', wrap(() => ({ ok: true, programs: PROGRAMS })));
+router.post('/funding/check', wrap((req) => {
+  const pub = req.body?.public || {};
+  const publicFacts = { corridor: pub.corridor ? String(pub.corridor) : undefined, on_site_dining: typeof pub.on_site_dining === 'boolean' ? pub.on_site_dining : undefined, food: pub.food === true, in_bay_area: true };
+  return { ok: true, results: PROGRAMS.map((p) => hw.checkFunding({ programId: p.id, publicFacts })) };
+}));
+
+// ---- Listing claims vs. city records ----
+router.get('/claims/:listingId', wrap((req) => {
+  const listing = hw.listings().find((l) => l.id === req.params.listingId);
+  if (!listing) throw new Error('unknown listing');
+  const snap = loadSnapshot();
+  return { ok: true, listing: { id: listing.id, address: listing.address, label: listing.label }, ...checkClaims(listing, snap), timeline: timeline(snap) };
 }));
 
 // ---- Startup workspace ----

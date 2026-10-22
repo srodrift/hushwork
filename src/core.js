@@ -7,6 +7,7 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 import { DEMO_LISTINGS } from './listings.js';
+import { PROGRAMS, evalCriterion, summarize, CHECKED_ON } from './funding.js';
 
 const TOKEN_RE = /\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi;
 
@@ -22,6 +23,11 @@ export const DEMO_PROFILE = Object.freeze({
   max_monthly_rent: '$7,500',
   business_plan_summary: 'Neighborhood bakery + coffee counter, 6 staff, opening Q2 2027.',
   personal_guarantee_willing: 'yes',
+  // Funding eligibility facts (synthetic first-time founder)
+  years_operating: '0 years in operation',
+  annual_revenue: '$0 annual revenue',
+  employees: '0 employees',
+  lease_status: 'no_lease_yet',
   // Startup workspace use case (synthetic)
   company_name: 'Fogline Labs',
   team_size: '6 people, growing to about 10 within a year',
@@ -251,6 +257,19 @@ export function createHushwork({
     return { result };
   }
 
+  // ---- Funding eligibility: rules run here against vault facts. The result
+  // carries only pass / fail / unknown per rule, never the underlying values.
+  // Safe to hand to the agent or show anywhere.
+  function checkFunding({ programId, publicFacts = {} }) {
+    const p = PROGRAMS.find((x) => x.id === programId);
+    if (!p) throw new Error('unknown program');
+    const getFact = (f) => (f.startsWith('public.') ? publicFacts[f.slice(7)] : vault.get(f));
+    const results = p.criteria.map((c) => ({ label: c.label, private: !c.fact.startsWith('public.'), result: evalCriterion(c, getFact) }));
+    const sum = summarize(results, p.status);
+    log({ type: 'derived', field: 'funding_eligibility', program: p.id, result: sum.match, fields: p.criteria.filter((c) => !c.fact.startsWith('public.')).map((c) => c.fact) });
+    return { programId: p.id, checkedOn: CHECKED_ON, results, ...sum };
+  }
+
   // ---- What the agent is allowed to see ----
   function buildAgentContext(publicData = {}) {
     return {
@@ -267,7 +286,7 @@ export function createHushwork({
     grantConsent, revoke, approve, deny, setProfileField, getDraftForOwner, sendApproved,
     // agent tools
     prepareDraft, budgetCheck,
-    workspaceBudgetCheck,
+    workspaceBudgetCheck, checkFunding,
     // gate (direct) and context
     disclose, buildAgentContext,
     // read-only views

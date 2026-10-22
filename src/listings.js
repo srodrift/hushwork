@@ -10,6 +10,11 @@ export const DEMO_LISTINGS = Object.freeze({
     address: '2234 Mission Street',
     askingRentMonthly: 6800,
     description: 'Ground-floor retail space. Broker describes it as suitable for a small café (unverified). Contact landlord for a showing.',
+    claims: [
+      { id: 'c1', kind: 'available', text: 'Available now' },
+      { id: 'c2', kind: 'food_ready', text: 'Suitable for a small café' },
+      { id: 'c3', kind: 'rent', text: 'Asking $6,800 per month' },
+    ],
   }),
   valencia_1: Object.freeze({
     id: 'valencia_1',
