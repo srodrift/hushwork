@@ -18,7 +18,7 @@
 html{-webkit-font-smoothing:antialiased}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.022em}
 nav{position:sticky;top:0;z-index:10;background:var(--nav);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--hair)}
-nav .in{max-width:1080px;margin:0 auto;padding:0 22px;height:52px;display:flex;align-items:center;justify-content:space-between}
+nav .in{max-width:1180px;margin:0 auto;padding:0 22px;height:52px;display:flex;align-items:center;justify-content:space-between}
 .wordmark{font:600 21px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.03em}
 .wordmark span{color:var(--blue)}
 .status{font-size:12px;color:var(--muted);letter-spacing:-.01em}
