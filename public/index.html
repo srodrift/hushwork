@@ -56,7 +56,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
 </style>
 </head>
 <body>
-<nav><div class="in"><div class="wordmark">hush<span>work.</span></div><a class="status" href="/investigate.html">AI agent + attack test →</a></div></nav>
+<nav><div class="in"><div class="wordmark">hush<span>work.</span></div><a class="status" href="/investigate.html">Let the AI contact the landlord →</a></div></nav>
 
 <main class="flow">
   <div class="progress" id="progress"></div>
@@ -128,6 +128,11 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
     <p class="lead" id="nextLead"></p>
     <div id="checklist"></div>
     <div class="row" style="margin-top:16px"><button class="ghost" id="copyList" style="flex:0 0 auto">Copy checklist</button><span class="note" id="copied" style="margin:0"></span></div>
+    <div class="card" style="margin-top:22px;background:var(--vault);color:var(--vault-ink)">
+      <h3 style="color:#fff">Next: let the AI contact the landlord for you</h3>
+      <p style="margin:6px 0 14px;color:var(--vault-muted)">Hushwork's AI drafts your inquiry about 2234 Mission Street. It never sees your budget, revenue or ID, and nothing is sent until you approve the exact message. You can even try to trick it.</p>
+      <a href="/investigate.html"><button>Continue with the AI →</button></a>
+    </div>
     <details style="margin-top:28px">
       <summary>What works today and what doesn't</summary>
       <ul class="note">
@@ -258,10 +263,15 @@ function toggleHood(k) {
 }
 function initMap() {
   if (!window.maplibregl) { $('map').innerHTML = '<div class="empty" style="padding:20px">The map could not load. Use the neighborhood buttons above.</div>'; return; }
-  const map = new maplibregl.Map({ container: 'map', style: 'https://tiles.openfreemap.org/styles/positron', center: [-122.44, 37.758], zoom: 11.2, attributionControl: { compact: true }, fadeDuration: 0 });
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  const map = new maplibregl.Map({ container: 'map', style: 'https://tiles.openfreemap.org/styles/positron', center: [-122.435, 37.757], zoom: 11.6, pitch: 50, bearing: -15, attributionControl: { compact: true }, fadeDuration: 0 });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   map.on('error', () => {});
   map.on('load', () => {
+    try { // 3D buildings from the base map's own building data (visible when zoomed in)
+      const src = Object.keys(map.getStyle().sources).find((k) => map.getStyle().sources[k].type === 'vector');
+      if (src) map.addLayer({ id: 'buildings-3d', type: 'fill-extrusion', source: src, 'source-layer': 'building', minzoom: 13,
+        paint: { 'fill-extrusion-color': '#d5d9df', 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 0], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.75 } });
+    } catch {}
     map.addSource('sites', { type: 'geojson', data: geo() });
     map.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: {
       'circle-radius': ['case', ['get', 'chosen'], 6, 4],

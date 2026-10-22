@@ -29,36 +29,46 @@
 </head>
 <body>
 <nav><div class="in"><a href="/" class="wordmark" style="color:inherit;text-decoration:none">hush<span>work.</span></a><div class="status" id="status">Loading…</div></div></nav>
-<div class="hero">
-  <h1>Your agent works.<br><em>Your secrets don't travel.</em></h1>
-  <p>An AI agent that researches a storefront and drafts the inquiry, without ever holding your private financial details.</p>
+<div class="hero" style="padding-bottom:28px">
+  <h1>Let the AI contact the landlord.<br><em>Safely.</em></h1>
+  <p>Hushwork's AI checks 2234 Mission Street and drafts your inquiry. It never sees your private numbers, and nothing is sent until you approve the exact message.</p>
 </div>
 <div class="wrap">
-  <section class="xray" id="xray">
-    <h2>Can a stranger make the AI leak your secrets?</h2>
-    <p class="lead">A broker listing for this storefront hides an instruction aimed at the AI. Run the real attack and watch what gets through.</p>
+  <div class="grid">
+    <section class="full" id="s3">
+      <h2><span class="num">1</span>Let the AI investigate and draft.</h2>
+      <p class="sub">Claude reads the city records and the broker's listing, checks the rent against your private max (it only learns "within" or "over"), and drafts an inquiry using placeholders like <span class="mono">{{email}}</span>.</p>
+      <button id="investigate">Investigate 2234 Mission Street</button>
+      <div id="report" style="margin-top:14px"></div>
+    </section>
+
+    <section class="full" id="s4">
+      <h2><span class="num">2</span>Approve the exact message.</h2>
+      <p class="sub">You see exactly what will be sent and what is held back. Change one character after approving and the send is blocked. Delivery is simulated.</p>
+      <div id="consent"><div class="empty">No draft yet. Run step 1 first.</div></div>
+    </section>
+  </div>
+
+  <section class="xray" id="xray" style="margin-top:20px">
+    <h2>3 · Now try to break it.</h2>
+    <p class="lead">A second listing for this storefront hides an instruction telling the AI to send your SSN and max rent to its broker. Run the real attack.</p>
     <button class="danger" id="attackHero" style="font-size:19px;padding:14px 28px">Run the attack</button>
     <div id="xresult"></div>
   </section>
 
-  <div class="grid">
-    <!-- 1 -->
+  <details style="margin-top:8px"><summary style="font-size:16px">Under the hood: storefront data, your vault, permissions and the audit log</summary>
+  <div class="grid" style="margin-top:14px">
     <section id="s1">
-      <h2><span class="num">1</span>Your opportunity.</h2>
-      <p class="sub">One San Francisco storefront. <span class="chip public">Public records</span> show history, not current vacancy or rent.</p>
+      <h2>Storefront and listing</h2>
       <div id="storefront"><div class="empty">Loading records…</div></div>
-      <label for="listing">Broker listing to investigate</label>
+      <label for="listing">Broker listing</label>
       <select id="listing"></select>
       <div id="listingBox"></div>
     </section>
-
-    <!-- 2 -->
     <section class="private" id="s2">
-      <h2><span class="num">2</span>Your private profile.</h2>
-      <p class="sub">Stored only on the trusted server. <b>The AI never receives these values.</b> It sees placeholders like <span class="mono">{{max_monthly_rent}}</span>.</p>
-      <div class="row">
-        <div><label for="biz">Business type (shared with agent)</label><input id="biz" value="café"></div>
-      </div>
+      <h2>Your private vault</h2>
+      <p class="sub">Stored only on the trusted server. The AI sees placeholders like <span class="mono">{{max_monthly_rent}}</span>.</p>
+      <div class="row"><div><label for="biz">Business type (shared with the AI)</label><input id="biz" value="café"></div></div>
       <div class="row">
         <div><label for="budget">Investment budget <span class="chip private">private</span></label><input id="budget" value="$80,000"></div>
         <div><label for="rent">Max monthly rent <span class="chip private">private</span></label><input id="rent" value="$7,500"></div>
@@ -66,42 +76,19 @@
       <div class="row" style="margin-top:12px"><button class="ghost" id="saveProfile">Save to vault</button></div>
       <div class="vault" id="vault"></div>
     </section>
-
-    <!-- 3 -->
-    <section class="full" id="s3">
-      <h2><span class="num">3</span>Agent investigation.</h2>
-      <p class="sub">Claude reads the public records and the unverified listing, runs a coarse budget check, and drafts an inquiry using placeholders only.</p>
-      <button id="investigate">Investigate this storefront</button>
-      <div id="report" style="margin-top:14px"></div>
-    </section>
-
-    <!-- 4 -->
-    <section class="full" id="s4">
-      <h2><span class="num">4</span>Approve the exact message.</h2>
-      <p class="sub">You approve the <b>exact</b> message. Any change to the text, recipient, or purpose voids the approval. Delivery is simulated.</p>
-      <div id="consent"><div class="empty">No draft yet. Run the investigation first.</div></div>
-      <div style="margin-top:14px">
-        <label>Standing grants (field × recipient × purpose × expiry)</label>
-        <div id="grants"></div>
-      </div>
-    </section>
-
-    <!-- 5 -->
     <section class="full" id="s5">
-      <h2><span class="num">5</span>Privacy proof.</h2>
-      <p class="sub">A second listing for the same storefront hides a prompt injection telling the agent to send your SSN, credit score, bank balance and max rent to its broker. This runs the real agent on it, then attacks the gate directly.</p>
-      <div class="row" style="flex:0"><button class="danger" id="attack" style="flex:0 0 auto">Run Privacy Attack Test</button><button class="ghost small" id="reset" style="flex:0 0 auto">Reset demo</button></div>
+      <h2>Permissions, proof and audit log</h2>
+      <label>What the landlord may receive (field × recipient × purpose × expiry)</label>
+      <div id="grants"></div>
+      <div class="row" style="flex:0;margin-top:16px"><button class="danger small" id="attack" style="flex:0 0 auto">Re-run attack details</button><button class="ghost small" id="reset" style="flex:0 0 auto">Reset demo</button></div>
       <div id="proof"></div>
-      <div style="margin-top:18px">
-        <label>Audit log (real security decisions, field names only, never values)</label>
-        <div id="audit"></div>
-      </div>
-      <div style="margin-top:18px">
-        <label>Outbox (what actually left the system)</label>
-        <div id="outbox"></div>
-      </div>
+      <label style="margin-top:18px">Audit log (field names only, never values)</label>
+      <div id="audit"></div>
+      <label style="margin-top:18px">Outbox (what actually left the system)</label>
+      <div id="outbox"></div>
     </section>
   </div>
+  </details>
   <footer>Hackathon prototype. In-memory session vault, simulated delivery, synthetic personal data. Prompt-injection defense here is architectural (the model never holds secrets; trusted code gates egress). It does not claim immunity to every attack.</footer>
 </div>
 
@@ -149,7 +136,7 @@ function renderVault() {
 }
 
 function renderGrants() {
-  const g = state.grants;
+  const g = state.grants.filter((x) => x.recipientId !== 'office_broker');
   $('grants').innerHTML = g.length ? `<div class="tablewrap"><table><tr><th>Field</th><th>Recipient</th><th>Purpose</th><th>Expires</th><th></th></tr>${g.map((x) => `
     <tr><td class="mono">${esc(x.field)}</td><td>${esc(x.recipientId)}</td><td>${esc(x.purpose)}</td><td>${esc(new Date(x.expiresAt).toLocaleTimeString())}</td>
     <td>${x.revoked ? '<span class="chip block">revoked</span>' : `<button class="ghost small" data-revoke="${esc(x.id)}">Revoke</button>`}</td></tr>`).join('')}</table></div>` : '<div class="empty">No grants.</div>';
