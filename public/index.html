@@ -361,7 +361,10 @@ function initMap() {
     if (b.dataset.mapdim !== undefined) { const flat = map.getPitch() > 5; map.jumpTo({ pitch: flat ? 0 : 50, bearing: flat ? 0 : -15 }); b.textContent = flat ? '3D' : '2D'; return; }
     S.mapStyle = b.dataset.mapstyle;
     bar.querySelectorAll('[data-mapstyle]').forEach((x) => { const on = x === b; x.className = (on ? '' : 'ghost ') + 'small'; x.style.background = on ? '' : 'var(--card)'; });
-    map.setStyle(STYLES[S.mapStyle].url);
+    map.setStyle(STYLES[S.mapStyle].url, { diff: false });
+    // Re-add our dots, circles and outlines once the new style is ready (belt and braces).
+    map.once('styledata', () => setTimeout(() => addOverlays(map), 0));
+    map.once('idle', () => addOverlays(map));
   });
   $('map').appendChild(bar);
   S.map = map;
