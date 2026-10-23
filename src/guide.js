@@ -149,6 +149,9 @@ export const RESOURCES = Object.freeze({
   sfImmigrationHelp: { label: 'SF.gov: Get immigration legal help', url: 'https://www.sf.gov/get-immigration-legal-help' },
   eoir: { label: 'U.S. DOJ: Recognized organizations and accredited representatives (FAQ)', url: 'https://www.justice.gov/eoir/recognition-and-accreditation-program-frequently-asked-questions' },
   uscisLegal: { label: 'USCIS: Find legal services and avoid scams', url: 'https://www.uscis.gov/scams-fraud-and-misconduct/avoid-scams/find-legal-services' },
+  starterGuides: { label: 'SF.gov starter guides for small businesses', url: 'https://www.sf.gov/starter-guides-small-businesses' },
+  sbdcRestaurant: { label: 'SF SBDC Restaurant Program (free advising)', url: 'https://www.sfsbdc.org/1-on-1-free-advising/restaurant-program/' },
+  vacantToVibrant: { label: 'Vacant to Vibrant (downtown pop-up grants and lease help)', url: 'https://www.vibrantsf.org/' },
   sba: { label: 'U.S. SBA business guide', url: 'https://www.sba.gov/business-guide' },
 });
 
@@ -186,6 +189,15 @@ export function checklist({ typeKey, site, custom }) {
         ...type.needs.map((t) => ({ text: t })),
         ...(type.food ? [{ text: 'Read the city’s food facility plan-check guide before signing a lease.', link: RESOURCES.foodFacility }] : []),
         { text: 'Register the business and confirm local license requirements.', link: RESOURCES.sfBusiness },
+      ],
+    },
+    {
+      title: 'Free help and programs',
+      items: [
+        { text: 'Follow the city’s step-by-step starter guide for your kind of business.', link: RESOURCES.starterGuides },
+        ...(type.food ? [{ text: 'Get free one-on-one advising for food businesses.', link: RESOURCES.sbdcRestaurant }] : []),
+        { text: 'Thinking downtown? Vacant to Vibrant offers grants and lease help for pop-ups in empty storefronts.', link: RESOURCES.vacantToVibrant },
+        { text: 'See every grant, loan and free-help program, with your private fit check, in the Money and help step.' },
       ],
     },
     {
