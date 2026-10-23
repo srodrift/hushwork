@@ -1,5 +1,5 @@
 {
- "source": "Storefront addresses and coordinates from Block Book (srodrift/block, prior project). Only geography is reused. Block Book status, vacancy, condition, scores and notes are NOT included because they are not sourced.",
+ "source": "Storefront addresses and coordinates compiled by the author. Vacancy is not verified.",
  "count": 55,
  "sites": [
   {
