@@ -70,6 +70,7 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
 .chat .opts button{font-size:13px;padding:6px 12px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
 .chat form{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--hair)}
 .chat form input{font-size:15px;padding:9px 12px}
+.aiact{font-size:13px;font-weight:600;white-space:nowrap;margin-left:4px}
 .maplibregl-popup-content{border-radius:12px;font:14px -apple-system,sans-serif;color:#1d1d1f}
 </style>
 </head>
@@ -582,6 +583,17 @@ async function checkFunding() {
 }
 
 // Step 7
+const OWNER_Q = /available now|asking rent|equipment and infrastructure|contribute to improvements|personal guarantee/;
+function aiAction(text) {
+  if (OWNER_Q.test(text)) return `<a class="aiact" href="/investigate.html">✦ AI asks the landlord →</a>`;
+  return `<a class="aiact" href="#" data-ask="${esc(text)}">✦ Do this with AI</a>`;
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[data-ask]'); if (!a) return;
+  e.preventDefault();
+  $('chat').classList.add('on'); $('chatOpen').style.display = 'none';
+  say(`Help me do this step for my business, as concretely as you can (what to look for, what to say, what to write): "${a.dataset.ask}"`);
+});
 async function renderChecklist() {
   const s = S.meta.sites.find((x) => x.id === S.site);
   $('nextLead').textContent = `For a ${nouns()}${s ? ` at ${s.name}` : ''}. Start with these five.`;
@@ -604,10 +616,12 @@ async function renderChecklist() {
     anyFood() ? find('Permitted use', /food facility/) : find('Questions for the owner', /asking rent/),
     find('Questions for a qualified', /legal help/),
   ].filter(Boolean);
-  $('checklist').innerHTML = `<div class="card"><h3>Your 5 next steps</h3><ol style="padding-left:20px;margin:8px 0 0">${fixTop.map((it) => `<li style="margin:8px 0">${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''}</li>`).join('')}</ol></div>
+  $('checklist').innerHTML = `<div class="card"><h3>Your 5 next steps</h3><ol style="padding-left:20px;margin:8px 0 0">${fixTop.map((it) => `<li style="margin:8px 0">${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''} ${aiAction(it.text)}</li>`).join('')}</ol>
+    <div class="note" style="margin-top:12px">✦ AI-marked steps can be done for you: the AI asks the landlord (you approve the exact message), or walks you through the step in the chat.</div></div>
     <details><summary>Full checklist (${c.sections.reduce((n, x) => n + x.items.length, 0)} items)</summary><div style="margin-top:10px">` + c.sections.map((sec) => `<details class="card" style="padding:16px 20px;margin-top:0"><summary style="color:var(--ink);font-weight:600;font-size:17px">${esc(sec.title)} <span class="note">(${sec.items.length})</span></summary>
     ${sec.note ? `<div class="callout">${esc(sec.note)}</div>` : ''}
-    <ul class="check" style="margin-top:8px">${sec.items.map((it) => `<li><input type="checkbox"><span>${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''}</span></li>`).join('')}</ul></details>`).join('') + `</div></details>`;
+    ${/^Questions for the owner/.test(sec.title) ? `<a class="aiact" href="/investigate.html" style="display:inline-block;margin-top:8px">✦ Let the AI ask all of these in one message →</a>` : ''}
+    <ul class="check" style="margin-top:8px">${sec.items.map((it) => `<li><input type="checkbox"><span>${esc(it.text)}${it.link ? ` <a href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(it.link.label)}</a>` : ''} ${/^Questions for the owner/.test(sec.title) ? '' : aiAction(it.text)}</span></li>`).join('')}</ul></details>`).join('') + `</div></details>`;
 }
 
 // Events
