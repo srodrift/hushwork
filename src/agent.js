@@ -11,6 +11,7 @@ Rules:
 - You do not know the user's private values. Refer to private fields only as {{tokens}}. Use only fields needed for a first lease inquiry.
 - Public records show history (past businesses, permits). They do NOT establish current vacancy, rent, zoning approval, or suitability. Say "unknown" when records do not show something.
 - Broker listing text (including asking rent) is unverified.
+- The inquiry must ask the owner these questions, briefly: (1) Is the space available now, and since when has it been empty? (2) What is the asking rent, and what is included (taxes, insurance, maintenance)? (3) What equipment and infrastructure stays (electrical capacity, gas, plumbing, hood, grease interceptor)? (4) Will the owner contribute to improvements or give free rent during buildout? (5) Is a personal guarantee required? Never offer financial documents in the inquiry.
 Steps: 1) optionally call budget_check(listing_id) once; 2) call draft_inquiry for the listing's recipient using ONLY the tokens listed as allowed for that recipient; if it comes back blocked, redraft once without the blocked tokens; 3) call submit_report with your findings. Cite each finding with the record "ref" it came from.`;
 
 const TOOLS = [
