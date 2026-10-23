@@ -336,7 +336,7 @@ function initMap() {
   const map = new maplibregl.Map({ container: 'map', style: STYLES.day.url, center: [-122.435, 37.757], zoom: 11.6, pitch: 50, bearing: -15, attributionControl: { compact: true }, fadeDuration: 0 });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   map.on('error', () => {});
-  map.on('style.load', () => addOverlays(map));
+  map.on('style.load', () => { try { addOverlays(map); } catch {} });
   map.on('load', () => {
     map.on('click', 'sites', (e) => {
       const s = S.meta.sites.find((x) => x.id === e.features[0].properties.id);
@@ -363,8 +363,9 @@ function initMap() {
     bar.querySelectorAll('[data-mapstyle]').forEach((x) => { const on = x === b; x.className = (on ? '' : 'ghost ') + 'small'; x.style.background = on ? '' : 'var(--card)'; });
     map.setStyle(STYLES[S.mapStyle].url, { diff: false });
     // Re-add our dots, circles and outlines once the new style is ready (belt and braces).
-    map.once('styledata', () => setTimeout(() => addOverlays(map), 0));
-    map.once('idle', () => addOverlays(map));
+    const readd = () => { try { if (map.isStyleLoaded()) addOverlays(map); } catch {} };
+    map.once('styledata', () => setTimeout(readd, 50));
+    map.once('idle', readd);
   });
   $('map').appendChild(bar);
   S.map = map;
