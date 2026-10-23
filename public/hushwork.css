@@ -18,10 +18,10 @@
 html{-webkit-font-smoothing:antialiased}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.022em}
 nav{position:sticky;top:0;z-index:10;background:var(--nav);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--hair)}
-nav .in{max-width:1180px;margin:0 auto;padding:0 22px;height:52px;display:flex;align-items:center;justify-content:space-between}
-.wordmark{font:600 21px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.03em}
+nav .in{max-width:1180px;margin:0 auto;padding:0 22px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.wordmark{font:700 27px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.03em}
 .wordmark span{color:var(--blue)}
-.status{font-size:12px;color:var(--muted);letter-spacing:-.01em}
+.status{font-size:14px;color:var(--muted);letter-spacing:-.01em}
 .hero{text-align:center;padding:72px 22px 44px}
 .hero h1{font:600 clamp(40px,6.4vw,64px)/1.05 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;letter-spacing:-.035em;margin:0}
 .hero h1 em{font-style:normal;background:linear-gradient(90deg,#c0362c,#e8742a);-webkit-background-clip:text;background-clip:text;color:transparent}
