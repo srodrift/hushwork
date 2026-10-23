@@ -10,7 +10,6 @@ Built for the National Renaissance Hackathon at super{set}, October 22, 2026. Tr
 
 This repository was created on October 22, 2026, with a fresh Git history. It is not entirely from-scratch work, and here is exactly what came from earlier:
 
-- **Block Book** (my earlier project, [srodrift/block](https://github.com/srodrift/block), built before this hackathon): the idea of pulling DataSF business-registration and building-permit records for a single storefront, and the demo address (2234 Mission Street), which was chosen from Block Book's storefront list. No Block Book code is included. `scripts/snapshot.js` is a new, simpler script that queries the same two public datasets. The committed `data/storefront.json` was generated earlier today by the previous version of that script, which also queried a third dataset.
 - **Built during the hackathon (Oct 22, 2026):** everything in `src/`, `public/`, `test/`, and `scripts/`. That includes the vault, egress gate, payload-bound approvals, audit log, coarse budget check, Claude agent and tools, attack test, API, UI, and all tests. This code was first written in a `veyra` branch of the Block Book repo earlier today, then moved here as a standalone app.
 - **Design:** inspired by Apple's design principles (system typography, generous whitespace, soft cards). It uses no Apple branding or assets.
 
