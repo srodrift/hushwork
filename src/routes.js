@@ -21,6 +21,7 @@ function reset() {
   hw = createHushwork();
   for (const field of DEFAULT_GRANTS) hw.grantConsent({ field, recipientId: 'mission_landlord', purpose: 'lease_inquiry', ttlMs: 24 * 3600_000 });
   for (const field of ['company_name', 'team_size']) hw.grantConsent({ field, recipientId: 'office_broker', purpose: 'workspace_inquiry', ttlMs: 24 * 3600_000 });
+  for (const field of ['legal_name', 'email', 'business_plan_summary']) hw.grantConsent({ field, recipientId: 'sbdc_adviser', purpose: 'advising_request', ttlMs: 24 * 3600_000 });
 }
 reset();
 
@@ -161,6 +162,14 @@ router.post('/workspace/cost', wrap((req) => {
 router.post('/workspace/tour', wrap((req) => ({ ok: true, result: tourChecklist(req.body?.type) })));
 router.post('/workspace/draft', wrap((req) => {
   const d = hw.prepareDraft({ recipientId: 'office_broker', purpose: 'workspace_inquiry', template: brokerTemplate(req.body?.type, req.body?.listing), source: 'owner_workspace' });
+  return { ok: true, ...d, draft: d.draftId ? hw.getDraftForOwner(d.draftId) : null };
+}));
+
+// Share the plan with a free adviser. Same gate: name, email and plan summary only; budget, SSN, bank balance stay in the vault.
+router.post('/adviser/draft', wrap((req) => {
+  const plan = redact(String(req.body?.plan || '')).replace(/[{}]/g, '').slice(0, 1400);
+  const template = `Hello, I'm {{legal_name}} ({{email}}). I'm a first-time founder in San Francisco. My plan: {{business_plan_summary}}\n\nHere is my checklist so far (from Hushwork):\n${plan}\n\nCould I book a free advising session? I'd most like help with permits and change of use, the lease, and funding options.\n\nThank you!`;
+  const d = hw.prepareDraft({ recipientId: 'sbdc_adviser', purpose: 'advising_request', template, source: 'owner_adviser' });
   return { ok: true, ...d, draft: d.draftId ? hw.getDraftForOwner(d.draftId) : null };
 }));
 

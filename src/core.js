@@ -41,9 +41,10 @@ export const DEMO_RECIPIENTS = Object.freeze({
   mission_landlord: { id: 'mission_landlord', name: 'Mission St Landlord', endpoint: 'sim://outbox/mission_landlord' },
   valencia_broker: { id: 'valencia_broker', name: 'Valencia Broker', endpoint: 'sim://outbox/valencia_broker' },
   office_broker: { id: 'office_broker', name: 'Office Broker (simulated)', endpoint: 'sim://outbox/office_broker' },
+  sbdc_adviser: { id: 'sbdc_adviser', name: 'SF SBDC adviser (simulated)', endpoint: 'sim://outbox/sbdc_adviser' },
 });
 
-export const PURPOSES = Object.freeze(['lease_inquiry', 'workspace_inquiry']);
+export const PURPOSES = Object.freeze(['lease_inquiry', 'workspace_inquiry', 'advising_request']);
 
 // Canonical form for hashing: Unicode NFC + normalized line endings. Nothing else
 // is normalized, so any visible edit (even one character) changes the hash.

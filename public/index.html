@@ -164,7 +164,8 @@ summary{cursor:pointer;color:var(--link);font-weight:500}
     <h1>Your next steps</h1>
     <p class="lead" id="nextLead"></p>
     <div id="checklist"></div>
-    <div class="row" style="margin-top:16px"><button class="ghost" id="copyList" style="flex:0 0 auto">Copy checklist</button><span class="note" id="copied" style="margin:0"></span></div>
+    <div class="row" style="margin-top:16px"><button id="shareAdviser" style="flex:0 0 auto">✦ Share with a free SBDC adviser</button><button class="ghost" id="copyList" style="flex:0 0 auto">Copy to Notes or email</button><span class="note" id="copied" style="margin:0"></span></div>
+    <div id="adviser"></div>
     <div class="card" style="margin-top:22px;background:var(--vault);color:var(--vault-ink)">
       <h3 style="color:#fff">Next: let the AI contact the landlord for you</h3>
       <p style="margin:6px 0 14px;color:var(--vault-muted)">Hushwork's AI drafts your inquiry about 2234 Mission Street. It never sees your budget, revenue or ID, and nothing is sent until you approve the exact message. You can even try to trick it.</p>
@@ -588,6 +589,41 @@ function aiAction(text) {
   if (OWNER_Q.test(text)) return `<a class="aiact" href="/investigate.html">✦ AI asks the landlord →</a>`;
   return `<a class="aiact" href="#" data-ask="${esc(text)}">✦ Do this with AI</a>`;
 }
+function checklistText() {
+  const c = S.checklist; if (!c) return '';
+  return c.sections.map((x) => `${x.title}:\n` + x.items.map((i) => `- ${i.text}`).join('\n')).join('\n\n');
+}
+async function adviserPost(path, body) {
+  const r = await fetch('/api' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json(); if (!r.ok || j.ok === false) throw new Error(j.error || r.statusText); return j;
+}
+let ADV = null;
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('#shareAdviser, #advApprove, #advSend, #advCancel'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  const box = $('adviser');
+  try {
+    if (t.id === 'shareAdviser') {
+      t.disabled = true;
+      const r = await adviserPost('/adviser/draft', { plan: checklistText() });
+      t.disabled = false;
+      if (!r.draft) { box.innerHTML = `<div class="callout">Blocked by the privacy gate: ${esc(r.reason || 'not allowed')}</div>`; return; }
+      ADV = { draft: r.draft };
+      box.innerHTML = `<div class="card" style="margin-top:14px"><h3>Approve the exact message</h3>
+        <div class="note">To: <b>${esc(r.draft.recipientName)}</b>. Free advising at <a href="https://www.sfsbdc.org/" target="_blank" rel="noopener">sfsbdc.org</a>. Delivery is simulated.</div>
+        <div class="note" style="margin-top:8px">Included: ${r.draft.includedFields.map((f) => `<span class="mono">${esc(f)}</span>`).join(', ')}<br>Stays in your vault: ${r.draft.excludedFields.filter((f) => /ssn|credit|bank|budget|rent|revenue|guarantee|address/.test(f)).map((f) => `<span class="mono">${esc(f)}</span>`).join(', ')}</div>
+        <textarea id="advPayload" rows="9" style="width:100%;margin-top:10px">${esc(r.draft.payload)}</textarea>
+        <div class="row" style="margin-top:10px"><button id="advApprove" style="flex:0 0 auto">Approve exact message</button><button class="ghost" id="advCancel" style="flex:0 0 auto">Cancel</button></div><div id="advResult"></div></div>`;
+    } else if (t.id === 'advApprove') {
+      const a = await adviserPost('/approve', { draft_id: ADV.draft.draftId });
+      ADV.approval = a;
+      t.outerHTML = '<button id="advSend" style="flex:0 0 auto">Send (simulated)</button>';
+    } else if (t.id === 'advSend') {
+      const { result } = await adviserPost('/send', { approval_id: ADV.approval.approvalId, recipient_id: ADV.draft.recipientId, purpose: ADV.draft.purpose, payload: $('advPayload').value });
+      $('advResult').innerHTML = `<div class="callout" style="margin-top:10px">${result.status === 'sent' ? '✓ Sent exactly what you approved (simulated). Your budget, SSN and bank balance never left the vault.' : '✕ Blocked: ' + esc(result.reason)}</div>`;
+    } else if (t.id === 'advCancel') { box.innerHTML = ''; ADV = null; }
+  } catch (err) { t.disabled = false; box.insertAdjacentHTML('beforeend', `<div class="callout">${esc(err.message)}</div>`); }
+}, true);
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[data-ask]'); if (!a) return;
   e.preventDefault();
