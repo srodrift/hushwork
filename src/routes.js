@@ -1,3 +1,4 @@
+import { redact } from './guideChat.js';
 // Hushwork HTTP API. One in-memory demo session per server process.
 import express from 'express';
 import { readFileSync, existsSync } from 'node:fs';
@@ -74,8 +75,8 @@ router.post('/profile', wrap((req) => {
 router.post('/investigate', wrap(async (req, res) => {
   const c = await getClient();
   if (!c) { res.status(503); return { ok: false, error: 'ANTHROPIC_API_KEY not set on the server' }; }
-  const { listing_id = 'mission_1', business_type = 'café' } = req.body || {};
-  const r = await runInvestigation({ hw, client: c, snapshot: loadSnapshot(), listingId: listing_id, businessType: business_type });
+  const { listing_id = 'mission_1', business_type = 'café', feedback = '' } = req.body || {};
+  const r = await runInvestigation({ hw, client: c, snapshot: loadSnapshot(), listingId: listing_id, businessType: business_type, feedback: hw._vaultValuesForTests().filter((v) => v.length >= 3).reduce((t, v) => t.split(v).join('[private]'), redact(feedback)) });
   return { ok: true, ...r, draft: r.draftId ? hw.getDraftForOwner(r.draftId) : null };
 }));
 

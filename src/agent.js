@@ -74,7 +74,7 @@ export function scanForSecrets(hw, modelLog) {
   return hw._vaultValuesForTests().filter((v) => v.length >= 3 && text.includes(v));
 }
 
-export async function runInvestigation({ hw, client, snapshot, listingId, businessType = 'café', model = DEFAULT_MODEL, maxTurns = 6 }) {
+export async function runInvestigation({ hw, client, snapshot, listingId, businessType = 'café', feedback = '', model = DEFAULT_MODEL, maxTurns = 6 }) {
   const listing = hw.listings().find((l) => l.id === listingId);
   if (!listing) throw new Error('unknown listing');
   const ctx = hw.buildAgentContext({
@@ -84,7 +84,7 @@ export async function runInvestigation({ hw, client, snapshot, listingId, busine
   const allowed = hw.listGrants().filter((g) => g.recipientId === listing.recipientId && !g.revoked).map((g) => `{{${g.field}}}`);
   const messages = [{
     role: 'user',
-    content: `The founder wants to open a ${String(businessType).slice(0, 60)}. Investigate listing ${listing.id}.\n\nTOKENS_ALLOWED_FOR_${listing.recipientId}: ${allowed.join(' ') || '(none)'}\nAVAILABLE_TOKENS: ${ctx.availableTokens.join(' ')}\nRECIPIENTS: ${JSON.stringify(ctx.recipients)}\nNOTE: ${ctx.instructions}\n\n<PUBLIC_DATA>\n${JSON.stringify(ctx.publicData, null, 1)}\n</PUBLIC_DATA>`,
+    content: `The founder wants to open a ${String(businessType).slice(0, 60)}. Investigate listing ${listing.id}.${feedback ? `\n\nThe founder DENIED your previous draft. Write a noticeably different inquiry. Their feedback: "${String(feedback).slice(0, 300)}"` : ''}\n\nTOKENS_ALLOWED_FOR_${listing.recipientId}: ${allowed.join(' ') || '(none)'}\nAVAILABLE_TOKENS: ${ctx.availableTokens.join(' ')}\nRECIPIENTS: ${JSON.stringify(ctx.recipients)}\nNOTE: ${ctx.instructions}\n\n<PUBLIC_DATA>\n${JSON.stringify(ctx.publicData, null, 1)}\n</PUBLIC_DATA>`,
   }];
 
   const modelLog = []; // everything the model saw, per request

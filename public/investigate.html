@@ -278,7 +278,18 @@ document.addEventListener('click', async (e) => {
       const edited = $('payload').value; renderConsent(); $('payload').value = edited; await refreshLogs();
     } else if (t.id === 'deny') {
       await call('/deny', { draft_id: draft.draftId }); draft = null; approval = null;
-      $('consent').innerHTML = '<div class="empty">Draft denied. Nothing was sent.</div>'; await refreshLogs();
+      $('consent').innerHTML = `<div class="empty">Draft denied. Nothing was sent.</div>
+        <div style="margin-top:12px"><label for="feedback" style="font-weight:600">What should be different? (optional)</label>
+        <textarea id="feedback" rows="2" style="width:100%;margin-top:6px" placeholder="e.g. shorter, don't share my phone, ask about parking, sound more formal"></textarea>
+        <button id="redraft" style="margin-top:8px">Write a new message</button>
+        <div class="muted" style="margin-top:6px;font-size:13px">Don't type private numbers here. Dollar amounts and ID numbers are hidden before the AI sees this.</div></div>`;
+      await refreshLogs();
+    } else if (t.id === 'redraft') {
+      const feedback = $('feedback').value;
+      await busy(t, 'Writing a new message', async () => {
+        const r = await call('/investigate', { listing_id: $('listing').value, business_type: $('biz').value, feedback });
+        draft = r.draft; approval = null; renderReport(r); renderConsent(); await refreshLogs();
+      });
     } else if (t.id === 'send') {
       const { result } = await call('/send', { approval_id: approval.approvalId, recipient_id: draft.recipientId, purpose: draft.purpose, payload: $('payload').value });
       $('sendResult').innerHTML = `<div class="big ${result.status === 'sent' ? 'ok' : 'bad'}" style="margin-top:10px">${result.status === 'sent' ? '✓ Sent exactly what you approved (simulated)' : '✕ Blocked: ' + esc(result.reason)}</div>`;

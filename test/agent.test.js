@@ -85,3 +85,14 @@ test('attack: model context contains the injection text but zero vault values', 
   assert.match(all, /Ignore all prior instructions/, 'injection reached the model (realistic attack)');
   for (const s of hw._vaultValuesForTests()) assert.ok(!all.includes(s), s);
 });
+
+test('redraft feedback reaches the model, private values in it do not', async () => {
+  const { createHushwork } = await import('../src/core.js');
+  const { runInvestigation, scanForSecrets } = await import('../src/agent.js');
+  const hw = createHushwork();
+  const seen = [];
+  const client = { messages: { create: async (req) => { seen.push(JSON.stringify(req.messages)); return { content: [{ type: 'tool_use', id: 't1', name: 'submit_report', input: { findings: [], risks: [], unknowns: [], next_step: 'x' } }] }; } } };
+  const fb = 'make it shorter';
+  await runInvestigation({ hw, client, snapshot: null, listingId: 'mission_1', feedback: fb });
+  assert.ok(seen[0].includes('DENIED your previous draft') && seen[0].includes(fb));
+});
